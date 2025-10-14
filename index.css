@@ -510,11 +510,11 @@ body:not(.user-is-tabbing) a:focus {
 
 /* === Videos (match image behavior) === */
 .work__video {
-  max-width: 100%;
+  width: 100%;
   height: auto;
   display: block;
   border-radius: 8px; /* optional: keeps consistent rounded corners */
-  object-fit: contain; /* ensures full video shows like original images */
+  object-fit: cover; /* fills the space while maintaining aspect ratio */
 }
 
 /* Small screen adjustment */
