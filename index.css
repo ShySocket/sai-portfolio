@@ -444,6 +444,8 @@ body:not(.user-is-tabbing) a:focus {
 .work__box {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 5rem;
 }
 
 @media (max-width: 900px) {
@@ -469,7 +471,8 @@ body:not(.user-is-tabbing) a:focus {
 }
 
 .work__text {
-  flex: 0 0 30%;
+  flex: 0 0 40%;
+  order: 1;
 }
 
 .work__list {
@@ -492,12 +495,20 @@ body:not(.user-is-tabbing) a:focus {
 .work__image-box {
   margin-bottom: var(--gutter-normal);
   overflow: hidden; /* keeps edges tidy */
+  order: 2;
+  flex: 0 0 50%;
 }
 
 @media (min-width: 901px) {
   .work__image-box {
-    flex: 1;
-    margin: 0 0 0 10rem; /* same as original template */
+    flex: 0 0 50%;
+    margin: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .work__image-box {
+    order: 0;
   }
 }
 
@@ -511,10 +522,11 @@ body:not(.user-is-tabbing) a:focus {
 /* === Videos (match image behavior) === */
 .work__video {
   width: 100%;
+  max-width: 100%;
   height: auto;
   display: block;
-  border-radius: 8px; /* optional: keeps consistent rounded corners */
-  object-fit: cover; /* fills the space while maintaining aspect ratio */
+  border-radius: 8px;
+  object-fit: contain;
 }
 
 /* Small screen adjustment */
