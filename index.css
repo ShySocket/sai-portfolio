@@ -440,6 +440,19 @@ body:not(.user-is-tabbing) a:focus {
 /* ----- Work ----- */
 /* --------------------------------------- */
 
+.work__image-box {
+    margin-bottom: var(--gutter-normal);
+    overflow: hidden;            /* add */
+}
+
+.work__video {                   /* add */
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;           /* optional, crops to fill */
+    border-radius: 8px;          /* optional */
+}
+
 .work__box {
     display: flex;
     align-items: center;
