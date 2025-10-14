@@ -439,86 +439,91 @@ body:not(.user-is-tabbing) a:focus {
 /* --------------------------------------- */
 /* ----- Work ----- */
 /* --------------------------------------- */
+/* ---------- Work Section (Fixed for Video + Image Layout) ---------- */
+
+.work__box {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .work__box {
+    align-items: initial;
+    flex-direction: column-reverse;
+  }
+}
+
+.work__box:not(:last-child) {
+  margin-bottom: 25rem;
+}
+
+@media (max-width: 500px) {
+  .work__box:not(:last-child) {
+    margin-bottom: 20rem;
+  }
+}
+
+.work__links {
+  display: flex;
+  align-items: center;
+}
+
+.work__text {
+  flex: 0 0 30%;
+}
+
+.work__list {
+  list-style-position: inside;
+  margin-bottom: var(--gutter-normal);
+}
+
+.work__code {
+  display: block;
+  height: 3rem;
+  margin-left: var(--gutter-normal);
+  transition: all 0.3s;
+}
+
+.work__code:hover {
+  transform: scale(1.2);
+}
+
+/* === Image & Video Container === */
+.work__image-box {
+  margin-bottom: var(--gutter-normal);
+  overflow: hidden; /* keeps edges tidy */
+}
 
 @media (min-width: 901px) {
   .work__image-box {
     flex: 1;
-    margin: 0 0 0 10rem;
+    margin: 0 0 0 10rem; /* same as original template */
   }
 }
 
+/* === Images === */
+.work__image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* === Videos (match image behavior) === */
 .work__video {
   max-width: 100%;
   height: auto;
   display: block;
-  /* remove width: 100% if you added it earlier */
+  border-radius: 8px; /* optional: keeps consistent rounded corners */
+  object-fit: contain; /* ensures full video shows like original images */
 }
 
-
-.work__box {
-    display: flex;
-    align-items: center;
+/* Small screen adjustment */
+@media (max-width: 900px) {
+  .work__code {
+    height: 4rem;
+  }
 }
 
-@media(max-width: 900px) {
-    .work__box {
-        align-items: initial;
-        flex-direction: column-reverse;
-    }
-}
-
-.work__box:not(:last-child) {
-    margin-bottom: 25rem;
-}
-
-@media(max-width: 500px) {
-    .work__box:not(:last-child) {
-        margin-bottom: 20rem;
-    }
-}
-
-.work__links {
-    display: flex;
-    align-items: center;
-}
-
-.work__text {
-    flex: 0 0 30%;
-}
-
-.work__list {
-    /* list-style-type: square; */
-    list-style-position: inside;
-    margin-bottom: var(--gutter-normal);
-}
-
-.work__code {
-    display: block;
-    height: 3rem;
-    margin-left: var(--gutter-normal);
-    transition: all .3s;
-}
-
-.work__code:hover {
-    transform: scale(1.2);
-}
-
-.work__image-box {
-    margin-bottom: var(--gutter-normal);
-}
-
-@media(min-width: 901px) {
-    .work__image-box {
-        flex: 1;
-        margin: 0 0 0 10rem;
-    }
-}
-
-@media(max-width: 900px) {
-    .work__code {
-        height: 4rem;
-    }
-}
 
 /* --------------------------------------- */
 /* ----- Clients ----- */
