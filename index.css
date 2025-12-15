@@ -537,6 +537,141 @@ body:not(.user-is-tabbing) a:focus {
 }
 
 /* --------------------------------------- */
+/* ----- Carousel ----- */
+/* --------------------------------------- */
+
+.carousel {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.carousel__container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 75%; /* 4:3 aspect ratio */
+  overflow: hidden;
+}
+
+.carousel__image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  display: block;
+}
+
+.carousel__image--active {
+  opacity: 1;
+}
+
+.carousel__controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+}
+
+.carousel__button {
+  background: var(--pink);
+  border: none;
+  color: var(--white);
+  font-size: 3rem;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  font-family: 'Jost', sans-serif;
+  line-height: 1;
+  padding: 0;
+}
+
+.carousel__button:hover {
+  background: var(--white);
+  color: var(--pink);
+  transform: scale(1.1);
+}
+
+.carousel__button:focus {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.carousel__indicators {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.carousel__indicator {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 2px solid var(--pink);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 0;
+}
+
+.carousel__indicator:hover {
+  background: var(--pink);
+  transform: scale(1.2);
+}
+
+.carousel__indicator--active {
+  background: var(--pink);
+}
+
+.carousel__indicator:focus {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+@media (max-width: 500px) {
+  .carousel__button {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 2.5rem;
+  }
+  
+  .carousel__indicator {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+}
+
+/* Work section enhancements */
+.work__award {
+  color: var(--pink);
+  font-weight: 600;
+  margin-bottom: 1rem !important;
+}
+
+.work__subheading {
+  font-size: var(--font-size-medium);
+  margin-top: var(--gutter-normal);
+  margin-bottom: var(--gutter-small);
+  color: var(--white);
+}
+
+.work__skills {
+  margin-top: var(--gutter-normal);
+  font-weight: 500;
+}
+
+/* --------------------------------------- */
 /* ----- Contact ----- */
 /* --------------------------------------- */
 
