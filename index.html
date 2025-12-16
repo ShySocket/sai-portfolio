@@ -125,8 +125,7 @@
             <!-- LEFT: text + links -->
             <div class="work__text">
               <h3>Sunrise: A Procedurally Generated VR Experience</h3>
-              <p>Sunrise is a single-player, first-person VR exploration experience set in an infinitely expanding urban maze inspired by the dense, winding streets of Hong Kong and Kowloon Walled City.</p>
-              <p>The environment is built from pre-generated modular assets such as floor tiles and wall segments, which are procedurally assembled at the floor and city-block level as the player explores. Horizontal expansion generates new streets and corridors, while vertical systems introduce stacked apartments, bridges, stairwells, and rooftops to create dense, multi-level navigation. To enable infinite exploration within a limited physical playspace, Sunrise uses room blindness–based spatial redirection and forward-only speed manipulation, allowing seamless traversal while maintaining comfort and orientation.</p>
+              <p>Sunrise is a single-player, first-person VR exploration experience set in an infinitely expanding urban maze inspired by the dense, winding streets of Hong Kong and Kowloon Walled City. The environment uses procedural generation to assemble modular assets at the floor and city-block level, creating dense, multi-level navigation with room blindness–based spatial redirection for seamless traversal.</p>
               
               <ul class="work__list work__skills">
                 <li>Procedural Generation (Hybrid XY / Z Plane Systems)</li>
@@ -170,7 +169,8 @@
             <div class="work__text">
               <h3>GyroBlaster</h3>
               <p>GyroBlaster is a two-player motion-controlled shooter game built in Python using CMU Graphics. Players use their phones' gyroscopes to control ships on a shared laptop screen, connected through a custom TCP socket client-server system and Pyto IDE.</p>
-              <ul class="work__list">
+              
+              <ul class="work__list work__skills">
                 <li>Python</li>
                 <li>TCP Sockets</li>
                 <li>JSON Serialization</li>
@@ -178,13 +178,9 @@
               </ul>
 
               <div class="work__links">
-                <a href="./images/Gyrogameplay.mp4" class="link__text">
-                  Watch Gameplay <span>&rarr;</span>
-                </a>
-
                 <a href="https://www.youtube.com/watch?v=bmcWOpWB1DQ"
-                  title="View Game on YouTube" target="_blank" rel="noopener">
-                  <img src="./images/Youtube1.png" class="work__code" alt="YouTube" />
+                  title="View Game on YouTube" target="_blank" rel="noopener" class="link__text">
+                  Watch on YouTube <span>&rarr;</span>
                 </a>
               </div>
             </div>
@@ -200,32 +196,38 @@
           </div>
 
           <div class="work__box">
+            <!-- LEFT: text -->
             <div class="work__text">
               <h3>Posematic — Motion Capture Data Loader</h3>
-              <p>Posematic is an AI model that converts 2D sketches into 3D models. I developed a PyTorch data loader to convert motion capture datasets (e.g., CMU Mocap, Age Kinematics) into structured tensors for Posematic's training pipeline. The loader parsed skeletal hierarchies, extracted and normalized frame data, and efficiently batched motion sequences for model input to enable realistic motion learning from raw 3D data.</p>
-              <ul class="work__list">
+              <p>I developed a PyTorch data loader to convert motion capture datasets (CMU Mocap, Age Kinematics) into structured tensors for Posematic's training pipeline. The loader parsed skeletal hierarchies, extracted and normalized frame data, and efficiently batched motion sequences for model input.</p>
+              
+              <ul class="work__list work__skills">
                 <li>PyTorch and Tensors</li>
                 <li>Data Parsing and Preprocessing</li>
                 <li>3D Kinematics</li>
                 <li>Evaluating Datasets</li>
               </ul>
             </div>
+            <!-- RIGHT: media -->
             <div class="work__image-box">
               <img src="./images/DatasetExtraction.png" class="work__image" alt="Posematic Data Loader" />
             </div>
           </div>
 
           <div class="work__box">
+            <!-- LEFT: text -->
             <div class="work__text">
               <h3>VR Rage Room</h3>
-              <p>VR game where players throw and break plates in a chaotic, MasterChef-style kitchen.</p>
-              <ul class="work__list">
+              <p>VR game where players throw and break plates in a chaotic, MasterChef-style kitchen. Features realistic physics-based interactions and immersive VR controls.</p>
+              
+              <ul class="work__list work__skills">
                 <li>Unity</li>
                 <li>C#</li>
                 <li>Frisbee Physics</li>
                 <li>OpenXR SDK</li>
               </ul>
             </div>
+            <!-- RIGHT: media -->
             <div class="work__image-box">
               <video class="work__video" autoplay muted loop playsinline
                     poster="./images/project-2.png">
