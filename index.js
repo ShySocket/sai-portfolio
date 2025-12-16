@@ -46,87 +46,134 @@ window.addEventListener("scroll", () => {
   Carousel functionality
  ---------------------------------------- */
 
-const initCarousel = () => {
-  const carousel = document.querySelector('.carousel');
+const initCarousel = (carousel) => {
   if (!carousel) return;
 
   const images = carousel.querySelectorAll('.carousel__image');
+  const videos = carousel.querySelectorAll('.carousel__video');
+  const iframes = carousel.querySelectorAll('.carousel__iframe');
   const indicators = carousel.querySelectorAll('.carousel__indicator');
   const prevButton = carousel.querySelector('.carousel__button--prev');
   const nextButton = carousel.querySelector('.carousel__button--next');
   
+  // Collect all media items in order
+  const allMediaItems = [];
+  const mediaTypes = [];
+  
+  // Get the container
+  const container = carousel.querySelector('.carousel__container');
+  if (!container) return;
+  
+  // Add items in the order they appear in the DOM
+  Array.from(container.children).forEach(node => {
+    if (node.classList.contains('carousel__image')) {
+      allMediaItems.push(node);
+      mediaTypes.push('image');
+    } else if (node.classList.contains('carousel__video')) {
+      allMediaItems.push(node);
+      mediaTypes.push('video');
+    } else if (node.classList.contains('carousel__iframe')) {
+      allMediaItems.push(node);
+      mediaTypes.push('iframe');
+    }
+  });
+  
+  if (allMediaItems.length === 0) return;
+  
   let currentIndex = 0;
-  const totalImages = images.length;
+  const totalItems = allMediaItems.length;
 
-  const showImage = (index) => {
-    // Remove active class from all images and indicators
+  const showItem = (index) => {
+    // Pause all videos first
+    videos.forEach(video => {
+      video.pause();
+      video.classList.remove('carousel__video--active');
+    });
+    
+    // Remove active class from all images
     images.forEach(img => img.classList.remove('carousel__image--active'));
+    
+    // Remove active class from all iframes
+    iframes.forEach(iframe => iframe.classList.remove('carousel__iframe--active'));
+    
+    // Update indicators
     indicators.forEach((ind, i) => {
       ind.classList.remove('carousel__indicator--active');
       ind.setAttribute('aria-selected', i === index ? 'true' : 'false');
     });
 
-    // Add active class to current image and indicator
-    images[index].classList.add('carousel__image--active');
+    // Add active class to current item based on its type
+    const currentItem = allMediaItems[index];
+    const currentType = mediaTypes[index];
+    
+    if (currentType === 'video') {
+      currentItem.classList.add('carousel__video--active');
+      // Play the active video
+      currentItem.play().catch(e => {
+        // Handle autoplay restrictions
+        console.log('Video autoplay prevented:', e);
+      });
+    } else if (currentType === 'iframe') {
+      currentItem.classList.add('carousel__iframe--active');
+    } else {
+      currentItem.classList.add('carousel__image--active');
+    }
+    
     indicators[index].classList.add('carousel__indicator--active');
     indicators[index].setAttribute('aria-selected', 'true');
     
     currentIndex = index;
   };
 
-  const nextImage = () => {
-    const nextIndex = (currentIndex + 1) % totalImages;
-    showImage(nextIndex);
+  const nextItem = () => {
+    const nextIndex = (currentIndex + 1) % totalItems;
+    showItem(nextIndex);
   };
 
-  const prevImage = () => {
-    const prevIndex = (currentIndex - 1 + totalImages) % totalImages;
-    showImage(prevIndex);
+  const prevItem = () => {
+    const prevIndex = (currentIndex - 1 + totalItems) % totalItems;
+    showItem(prevIndex);
   };
 
   // Button event listeners
   if (nextButton) {
-    nextButton.addEventListener('click', nextImage);
+    nextButton.addEventListener('click', nextItem);
   }
   
   if (prevButton) {
-    prevButton.addEventListener('click', prevImage);
+    prevButton.addEventListener('click', prevItem);
   }
 
   // Indicator event listeners
   indicators.forEach((indicator, index) => {
     indicator.addEventListener('click', () => {
-      showImage(index);
+      showItem(index);
     });
   });
 
   // Keyboard navigation
   carousel.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft') {
-      prevImage();
+      prevItem();
     } else if (e.key === 'ArrowRight') {
-      nextImage();
+      nextItem();
     }
   });
 
-  // Auto-play (optional - can be disabled if not desired)
-  // Uncomment the following lines if you want auto-play:
-  /*
-  let autoPlayInterval = setInterval(nextImage, 5000);
-  
-  carousel.addEventListener('mouseenter', () => {
-    clearInterval(autoPlayInterval);
-  });
-  
-  carousel.addEventListener('mouseleave', () => {
-    autoPlayInterval = setInterval(nextImage, 5000);
-  });
-  */
+  // Initialize first item
+  showItem(0);
 };
 
-// Initialize carousel when DOM is loaded
+const initAllCarousels = () => {
+  const carousels = document.querySelectorAll('.carousel');
+  carousels.forEach(carousel => {
+    initCarousel(carousel);
+  });
+};
+
+// Initialize carousels when DOM is loaded
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initCarousel);
+  document.addEventListener('DOMContentLoaded', initAllCarousels);
 } else {
-  initCarousel();
+  initAllCarousels();
 }
