@@ -187,28 +187,50 @@ const initScrollStacking = () => {
   if (sections.length === 0) return;
 
   let ticking = false;
+  let lastScrollY = window.scrollY;
 
   const handleScroll = () => {
     if (!ticking) {
       window.requestAnimationFrame(() => {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
         const windowHeight = window.innerHeight;
+        const scrollDirection = scrollY > lastScrollY ? 'down' : 'up';
         
         sections.forEach((section, index) => {
           const rect = section.getBoundingClientRect();
           const sectionTop = rect.top;
           const sectionBottom = rect.bottom;
+          const sectionHeight = rect.height;
           
-          // Add stacking class when section enters viewport
-          // Section should be stacked when it's in the upper half of the viewport
-          if (sectionTop <= windowHeight * 0.3 && sectionBottom > 0) {
-            section.classList.add('stacked');
-          } else if (sectionTop > windowHeight) {
-            // Remove stacking when section is below viewport
+          // Calculate section's position relative to viewport
+          const isInViewport = sectionTop < windowHeight && sectionBottom > 0;
+          const isAboveViewport = sectionBottom <= 0;
+          const isBelowViewport = sectionTop >= windowHeight;
+          
+          // Stack sections that are in or entering the viewport
+          if (isInViewport) {
+            // Section is visible - stack it
+            if (!section.classList.contains('stacked')) {
+              section.classList.add('stacked');
+            }
+          } else if (scrollDirection === 'down' && isAboveViewport) {
+            // Scrolling down and section has passed - keep it stacked briefly
+            // This creates the stacking effect
+            if (sectionBottom > -100) {
+              section.classList.add('stacked');
+            } else {
+              section.classList.remove('stacked');
+            }
+          } else if (scrollDirection === 'up' && isBelowViewport) {
+            // Scrolling up and section hasn't entered yet - don't stack
+            section.classList.remove('stacked');
+          } else if (isBelowViewport && sectionTop > windowHeight + 200) {
+            // Section is far below - remove stacking
             section.classList.remove('stacked');
           }
         });
         
+        lastScrollY = scrollY;
         ticking = false;
       });
       
@@ -221,6 +243,9 @@ const initScrollStacking = () => {
   
   // Throttled scroll listener
   window.addEventListener('scroll', handleScroll, { passive: true });
+  
+  // Also handle resize
+  window.addEventListener('resize', handleScroll, { passive: true });
 };
 
 // Initialize scroll stacking when DOM is loaded
