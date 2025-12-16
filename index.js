@@ -177,3 +177,55 @@ if (document.readyState === 'loading') {
 } else {
   initAllCarousels();
 }
+
+/* -----------------------------------------
+  Scroll stacking animation
+ ---------------------------------------- */
+
+const initScrollStacking = () => {
+  const sections = document.querySelectorAll('section:not(.contact)');
+  if (sections.length === 0) return;
+
+  let ticking = false;
+
+  const handleScroll = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        
+        sections.forEach((section, index) => {
+          const rect = section.getBoundingClientRect();
+          const sectionTop = rect.top;
+          const sectionBottom = rect.bottom;
+          
+          // Add stacking class when section enters viewport
+          // Section should be stacked when it's in the upper half of the viewport
+          if (sectionTop <= windowHeight * 0.3 && sectionBottom > 0) {
+            section.classList.add('stacked');
+          } else if (sectionTop > windowHeight) {
+            // Remove stacking when section is below viewport
+            section.classList.remove('stacked');
+          }
+        });
+        
+        ticking = false;
+      });
+      
+      ticking = true;
+    }
+  };
+
+  // Initial check
+  handleScroll();
+  
+  // Throttled scroll listener
+  window.addEventListener('scroll', handleScroll, { passive: true });
+};
+
+// Initialize scroll stacking when DOM is loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initScrollStacking);
+} else {
+  initScrollStacking();
+}
