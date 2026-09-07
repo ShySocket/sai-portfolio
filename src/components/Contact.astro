@@ -1,0 +1,21 @@
+---
+const email = 'saib@andrew.cmu.edu';
+const year = new Date().getFullYear();
+---
+
+<section class="contact" id="contact">
+  <div class="contact__glow" aria-hidden="true"></div>
+  <div class="container">
+    <p class="eyebrow" data-reveal>Contact</p>
+    <h2 class="contact__title" data-reveal>Let&rsquo;s build something.</h2>
+    <a class="contact__mail magnetic" href={`mailto:${email}`} data-reveal>{email}</a>
+    <p class="contact__sub" data-reveal>Carnegie Mellon University · Pittsburgh, PA</p>
+  </div>
+</section>
+
+<footer class="footer" role="contentinfo">
+  <div class="container footer__inner">
+    <span>&copy; {year} Sai Bhandar</span>
+    <a href="#top">Back to top</a>
+  </div>
+</footer>

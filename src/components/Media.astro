@@ -1,0 +1,95 @@
+---
+import { Image } from 'astro:assets';
+import type { Media } from '../data/projects';
+
+interface Props { media: Media; title: string; live?: boolean }
+const { media, title, live = false } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+{media.type === 'video' && (
+  <div class="media" data-tilt data-media>
+    <div class="media__inner" data-parallax>
+      <video
+        class="media__el"
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        poster={`${base}/${media.poster}`}
+        aria-label={media.label}
+        data-autoplay
+      >
+        <source src={`${base}/${media.src}`} type="video/mp4" />
+      </video>
+    </div>
+    <div class="media__glare" aria-hidden="true"></div>
+    <span class="media__badge"><i aria-hidden="true"></i>{live ? 'Recorded gameplay' : 'Gameplay'}</span>
+  </div>
+)}
+
+{media.type === 'images' && (
+  <div class="media" data-tilt data-media>
+    <div class="carousel" data-carousel aria-roledescription="carousel" aria-label={media.label}>
+      <div class="carousel__track" data-lenis-prevent>
+        {media.images.map((img, i) => (
+          <div class="carousel__slide" role="group" aria-label={`${i + 1} of ${media.images.length}`}>
+            <Image src={img} alt={media.alts[i]} widths={[640, 960, 1280]} sizes="(min-width: 900px) 640px, 100vw" loading={i === 0 ? 'eager' : 'lazy'} format="webp" quality={78} />
+          </div>
+        ))}
+      </div>
+      <div class="carousel__nav">
+        <button class="carousel__btn" data-prev aria-label={`Previous ${title} image`}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+        </button>
+        <div class="carousel__dots" role="tablist">
+          {media.images.map((_, i) => (
+            <button class:list={['carousel__dot', { 'is-active': i === 0 }]} role="tab" aria-selected={i === 0 ? 'true' : 'false'} aria-label={`Go to image ${i + 1}`} data-dot={i}></button>
+          ))}
+        </div>
+        <button class="carousel__btn" data-next aria-label={`Next ${title} image`}>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="media__glare" aria-hidden="true"></div>
+  </div>
+)}
+
+{media.type === 'phone' && (
+  <div class="media media--phone" data-media>
+    <div class="phone" data-tilt>
+      <div class="phone__screen">
+        <div class="carousel" data-carousel aria-roledescription="carousel" aria-label={media.label}>
+          <div class="carousel__track" data-lenis-prevent>
+            {media.images.map((img, i) => (
+              <div class="carousel__slide" role="group" aria-label={`${i + 1} of ${media.images.length}`}>
+                <Image src={img} alt={media.alts[i]} widths={[390, 780]} sizes="280px" loading={i === 0 ? 'eager' : 'lazy'} format="webp" quality={80} />
+              </div>
+            ))}
+          </div>
+          {media.images.length > 1 && (
+            <div class="carousel__nav">
+              <button class="carousel__btn" data-prev aria-label={`Previous ${title} image`}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg>
+              </button>
+              <div class="carousel__dots" role="tablist">
+                {media.images.map((_, i) => (
+                  <button class:list={['carousel__dot', { 'is-active': i === 0 }]} role="tab" aria-selected={i === 0 ? 'true' : 'false'} aria-label={`Go to image ${i + 1}`} data-dot={i}></button>
+                ))}
+              </div>
+              <button class="carousel__btn" data-next aria-label={`Next ${title} image`}>
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+    <a class="qr-card" href={media.qrHref} target="_blank" rel="noopener">
+      <img src={`${base}/${media.qr}`} alt={`QR code for ${media.qrHref}`} width="150" height="150" loading="lazy" />
+      <p>Scan to play on your phone</p>
+      <small>{media.qrHref.replace('https://', '')}</small>
+    </a>
+  </div>
+)}

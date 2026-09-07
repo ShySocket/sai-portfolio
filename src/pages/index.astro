@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Project from '../components/Project.astro';
+import Contact from '../components/Contact.astro';
+import { projects } from '../data/projects';
+
+const marquee = [...projects, ...projects];
+---
+
+<Base>
+  <Nav />
+  <main>
+    <Hero />
+
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        {marquee.map((p) => (
+          <span class="marquee__item">{p.title}<i></i></span>
+        ))}
+      </div>
+    </div>
+
+    <section class="work" id="work" aria-labelledby="work-title">
+      <div class="container">
+        <div class="work__head">
+          <div>
+            <p class="eyebrow" data-reveal>Selected work</p>
+            <h2 class="work__title" id="work-title" data-reveal>Things I&rsquo;ve built.</h2>
+          </div>
+          <span class="work__count" data-reveal>{String(projects.length).padStart(2, '0')} projects</span>
+        </div>
+        {projects.map((p, i) => <Project project={p} index={i} total={projects.length} />)}
+      </div>
+    </section>
+
+    <Contact />
+  </main>
+</Base>
