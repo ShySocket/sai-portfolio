@@ -1,4 +1,6 @@
 ---
+import '@fontsource-variable/inter';
+import '@fontsource-variable/space-grotesk';
 import '../styles/global.css';
 import 'lenis/dist/lenis.css';
 import { projects } from '../data/projects';
@@ -27,12 +29,6 @@ const canonical = new URL(base + '/', Astro.site).href;
     <meta property="og:image" content={`${canonical}media/sidequest-poster.jpg`} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
-    />
     <script is:inline>document.documentElement.classList.add('js');</script>
   </head>
   <body>

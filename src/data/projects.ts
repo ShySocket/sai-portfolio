@@ -52,7 +52,7 @@ export const projects: Project[] = [
     media: {
       type: 'video',
       src: 'media/sidequest.mp4',
-      poster: 'media/sidequest-poster.jpg',
+      poster: 'media/sidequest-poster.webp',
       label: 'Sidequest gameplay: a character runs over real street footage, jumping cars and hedges',
     },
   },
@@ -137,7 +137,7 @@ export const projects: Project[] = [
     media: {
       type: 'video',
       src: 'media/sunrise.mp4',
-      poster: 'media/sunrise-poster.jpg',
+      poster: 'media/sunrise-poster.webp',
       label: 'Sunrise VR: procedurally generated floors of a dense city',
     },
   },
@@ -152,7 +152,7 @@ export const projects: Project[] = [
     media: {
       type: 'video',
       src: 'media/gyroblaster.mp4',
-      poster: 'media/gyroblaster-poster.jpg',
+      poster: 'media/gyroblaster-poster.webp',
       label: 'GyroBlaster gameplay: two ships controlled by phone gyroscopes',
     },
   },

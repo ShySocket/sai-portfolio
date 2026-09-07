@@ -12,8 +12,8 @@
   --line: rgba(255, 255, 255, 0.09);
   --line-2: rgba(255, 255, 255, 0.16);
 
-  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
+  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
   --radius: 18px;
@@ -330,9 +330,10 @@ ul { list-style: none; padding: 0; }
 }
 .carousel__btn:hover { background: var(--pink); border-color: var(--pink); transform: scale(1.08); }
 .carousel__btn svg { width: 14px; height: 14px; }
-.carousel__dots { display: flex; gap: 6px; padding: 0 6px; pointer-events: auto; }
-.carousel__dot { width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.35); transition: width 0.3s var(--ease-out), background-color 0.3s; }
-.carousel__dot.is-active { width: 20px; background: var(--pink); }
+.carousel__dots { display: flex; gap: 0; padding: 0 2px; pointer-events: auto; }
+.carousel__dot { position: relative; width: 24px; height: 24px; display: grid; place-items: center; }
+.carousel__dot::before { content: ''; width: 6px; height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.35); transition: width 0.3s var(--ease-out), background-color 0.3s; }
+.carousel__dot.is-active::before { width: 18px; background: var(--pink); }
 
 /* Phone mock (Lazer Shooter) */
 .media--phone {
