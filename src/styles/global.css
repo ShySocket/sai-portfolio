@@ -8,6 +8,7 @@
   --muted: #8f8997;
   --pink: #ff3258;
   --pink-2: #ff6b85;
+  --pink-solid: #e5143d; /* filled buttons with white text: 4.67:1 (WCAG AA); --pink itself is only 3.6:1 */
   --pink-glow: rgba(255, 50, 88, 0.35);
   --line: rgba(255, 255, 255, 0.09);
   --line-2: rgba(255, 255, 255, 0.16);
@@ -213,11 +214,11 @@ ul { list-style: none; padding: 0; }
 }
 .btn::before {
   content: ''; position: absolute; inset: 0; border-radius: inherit;
-  background: var(--pink); transform: translateY(101%); transition: transform 0.45s var(--ease-out); z-index: -1;
+  background: var(--pink-solid); transform: translateY(101%); transition: transform 0.45s var(--ease-out); z-index: -1;
 }
 .btn:hover { border-color: var(--pink); color: #fff; }
 .btn:hover::before { transform: translateY(0); }
-.btn--primary { background: var(--pink); border-color: var(--pink); color: #fff; box-shadow: 0 8px 30px -10px var(--pink-glow); }
+.btn--primary { background: var(--pink-solid); border-color: var(--pink-solid); color: #fff; box-shadow: 0 8px 30px -10px var(--pink-glow); }
 .btn--primary::before { background: #fff; }
 .btn--primary:hover { color: var(--bg); }
 .btn svg { width: 15px; height: 15px; flex: none; transition: transform 0.35s var(--ease-out); }
