@@ -30,7 +30,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 {media.type === 'images' && (
   <div class="media" data-tilt data-media>
-    <div class="carousel" data-carousel aria-roledescription="carousel" aria-label={media.label}>
+    <div class="carousel" data-carousel role="region" aria-roledescription="carousel" aria-label={media.label}>
       <div class="carousel__track" data-lenis-prevent>
         {media.images.map((img, i) => (
           <div class="carousel__slide" role="group" aria-label={`${i + 1} of ${media.images.length}`}>
@@ -60,7 +60,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   <div class="media media--phone" data-media>
     <div class="phone" data-tilt>
       <div class="phone__screen">
-        <div class="carousel" data-carousel aria-roledescription="carousel" aria-label={media.label}>
+        <div class="carousel" data-carousel role="region" aria-roledescription="carousel" aria-label={media.label}>
           <div class="carousel__track" data-lenis-prevent>
             {media.images.map((img, i) => (
               <div class="carousel__slide" role="group" aria-label={`${i + 1} of ${media.images.length}`}>
