@@ -101,7 +101,8 @@ ul { list-style: none; padding: 0; }
 @media (min-width: 1100px) and (pointer: fine) { .index { display: flex; } }
 .index__item {
   position: relative; display: flex; align-items: center; justify-content: flex-end;
-  height: 14px; color: var(--muted);
+  /* 24px hit area (WCAG 2.5.8) while the dot keeps its 14px pitch: negative margins cancel the extra height. */
+  height: 24px; min-width: 24px; margin-block: -5px; color: var(--muted);
 }
 .index__dot {
   width: 6px; height: 6px; border-radius: 50%; background: currentColor;
@@ -391,4 +392,5 @@ ul { list-style: none; padding: 0; }
 
 .footer { border-top: 1px solid var(--line); padding: 1.5rem 0 2rem; }
 .footer__inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem 1rem; color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono); letter-spacing: 0.04em; }
+.footer a { display: inline-flex; align-items: center; min-height: 24px; margin-block: -2px; } /* 24px hit area, no layout change */
 .footer a:hover { color: var(--fg); }
