@@ -1,11 +1,11 @@
 /* ---------- Tokens ---------- */
 :root {
-  --bg: #08080a;
-  --bg-2: #101013;
+  --bg: #0b0b0c;
+  --bg-2: #131315;
   --bg-3: #17171b;
-  --fg: #f5f0f8;
-  --fg-2: #c9c3cf;
-  --muted: #8f8997;
+  --fg: #f2efe9;
+  --fg-2: #b9b4ad;
+  --muted: #86817b;
   --pink: #ff3258;
   --pink-2: #ff6b85;
   --pink-solid: #e5143d; /* filled buttons with white text: 4.67:1 (WCAG AA); --pink itself is only 3.6:1 */
@@ -13,9 +13,9 @@
   --line: rgba(255, 255, 255, 0.09);
   --line-2: rgba(255, 255, 255, 0.16);
 
-  --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
-  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-display: 'Archivo Variable', system-ui, sans-serif; /* set with font-stretch: 125% */
+  --font-body: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --radius: 18px;
   --radius-sm: 10px;
