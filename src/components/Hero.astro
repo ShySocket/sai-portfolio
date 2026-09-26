@@ -7,20 +7,16 @@ import { projects } from '../data/projects';
     <h1 class="hero__name" data-reveal>Sai Bhandar</h1>
     <p class="hero__tag" data-reveal><b>Business + CS</b> @ CMU</p>
 
-    <nav class="toc" aria-labelledby="toc-label">
-      <div class="toc__head" aria-hidden="true" data-rule>
-        <span id="toc-label" class="toc__label">Index</span>
-        <span class="toc__col toc__col--kind">What it is</span>
-        <span class="toc__col toc__col--stack">Stack</span>
-      </div>
+    <nav class="toc" aria-label="Projects">
       <ol class="toc__list">
         {projects.map((p, i) => (
           <li data-reveal>
             <a class="toc__row" href={`#${p.slug}`}>
               <span class="toc__no">{String(i + 1).padStart(2, '0')}</span>
               <span class="toc__title">{p.title}</span>
-              <span class="toc__kind">{p.kicker}</span>
-              <span class="toc__stack">{p.tags.slice(0, 3).join(', ')}</span>
+              <span class="toc__kind">
+                {p.kicker.split(' · ').map((k, j) => <span class:list={{ 'toc__extra': j > 1 }}>{j > 0 && ' · '}{k}</span>)}
+              </span>
             </a>
           </li>
         ))}
