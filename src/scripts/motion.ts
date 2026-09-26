@@ -101,23 +101,14 @@ function anchors() {
 function hero() {
   const name = $('.hero__name');
   if (!name) return;
-  const split = SplitText.create(name, { type: 'chars', charsClass: 'char', mask: 'chars' });
+  const split = SplitText.create(name, { type: 'words,chars', charsClass: 'char', mask: 'chars' });
   gsap.set(name, { opacity: 1 });
 
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-  tl.fromTo(split.chars, { yPercent: 115, rotate: 4 }, { yPercent: 0, rotate: 0, duration: 1.2, stagger: { each: 0.035, from: 'start' } }, 0.15)
-    .fromTo('.hero__eyebrow', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.35)
-    .fromTo('.hero__tag', { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9 }, 0.7)
-    .fromTo('.hero__cta > *', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.85)
-    .fromTo('.nav', { y: -16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.5);
-
-  // Hero content drifts up and fades as the page scrolls.
-  gsap.to('.hero__inner', {
-    yPercent: -18,
-    opacity: 0.15,
-    ease: 'none',
-    scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true },
-  });
+  tl.fromTo(split.chars, { yPercent: 110 }, { yPercent: 0, duration: 1, stagger: 0.03 }, 0.1)
+    .fromTo('.hero__tag', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, 0.45)
+    .fromTo('.toc__list > li', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.04 }, 0.6)
+    .fromTo('.nav', { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.3);
 }
 
 function progress() {
