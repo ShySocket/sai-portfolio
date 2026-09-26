@@ -1,10 +1,3 @@
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from 'gsap/SplitText';
-import Lenis from 'lenis';
-
-gsap.registerPlugin(ScrollTrigger, SplitText);
-
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
@@ -66,100 +59,52 @@ function carousels() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Motion                                                              */
+/* Motion: CSS transitions keyed by .is-in (see global.css)             */
 /* ------------------------------------------------------------------ */
 
-let lenis: Lenis | null = null;
-
-function smoothScroll() {
-  lenis = new Lenis({ lerp: 0.11, smoothWheel: true, syncTouch: false });
-  lenis.on('scroll', ScrollTrigger.update);
-  gsap.ticker.add((t) => lenis!.raf(t * 1000));
-  gsap.ticker.lagSmoothing(0);
-}
-
-function anchors() {
-  for (const a of $$<HTMLAnchorElement>('a[href^="#"]')) {
-    a.addEventListener('click', (e) => {
-      const id = a.getAttribute('href') || '';
-      if (id.length < 2) return;
-      const target = document.querySelector<HTMLElement>(id);
-      if (!target) return;
-      e.preventDefault();
-      if (lenis) lenis.scrollTo(target, { offset: id === '#top' ? 0 : -56, duration: 1.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
-      else target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth' });
-      history.replaceState(null, '', id === '#top' ? location.pathname : id);
-    });
-  }
-}
-
-function hero() {
-  const name = $('.hero__name');
-  if (!name) return;
-  const split = SplitText.create(name, { type: 'words,chars', charsClass: 'char', mask: 'chars' });
-  gsap.set(name, { opacity: 1 });
-
-  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-  tl.fromTo(split.chars, { yPercent: 110 }, { yPercent: 0, duration: 1, stagger: 0.03 }, 0.1)
-    .fromTo('.hero__tag', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 }, 0.45)
-    .fromTo('.toc__list > li', { y: 12, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.04 }, 0.6)
-    .fromTo('.nav', { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.3);
-}
-
 function nav() {
-  const link = (id: string) => $(`.nav__link[data-nav="${id}"]`);
-  for (const id of ['work', 'contact']) {
-    const el = document.getElementById(id);
-    const a = link(id);
-    if (!el || !a) continue;
-    ScrollTrigger.create({
-      trigger: el,
-      start: 'top 50%',
-      end: 'bottom 50%',
-      onToggle: (self) => a.classList.toggle('is-active', self.isActive),
-    });
+  const links = $$<HTMLAnchorElement>('.nav__link[data-nav]');
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        links.find((a) => a.dataset.nav === e.target.id)?.classList.toggle('is-active', e.isIntersecting);
+      }
+    },
+    { rootMargin: '-50% 0px -50% 0px' },
+  );
+  for (const a of links) {
+    const el = document.getElementById(a.dataset.nav || '');
+    if (el) io.observe(el);
   }
-
 }
 
 function reveals() {
-  const rise = (targets: Element[], trigger: Element, start = 'top 80%') =>
-    gsap.fromTo(targets, { y: 12, opacity: 0 }, {
-      y: 0, opacity: 1, duration: 0.7, ease: 'power2.out', stagger: 0.04,
-      scrollTrigger: { trigger, start, once: true },
-    });
+  // Hero: one short staggered fade on load.
+  $$('.hero [data-reveal]').forEach((el, i) => {
+    el.style.transitionDelay = `${i * 40}ms`;
+    requestAnimationFrame(() => el.classList.add('is-in'));
+  });
 
-  for (const root of $$('.contact .container')) rise($$('[data-reveal]', root), root, 'top 85%');
-
-  for (const project of $$('.project')) {
-    rise($$('[data-reveal]', project), project, 'top 75%');
-    const media = $('[data-media]', project);
-    if (media) rise([media], media, 'top 85%');
-  }
+  // Everything else fades in once as it enters.
+  const io = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        e.target.classList.add('is-in');
+        io.unobserve(e.target);
+      }
+    },
+    { rootMargin: '0px 0px -10% 0px' },
+  );
+  $$('main [data-reveal], main [data-media]').filter((el) => !el.closest('.hero')).forEach((el) => io.observe(el));
 }
-
-/* ------------------------------------------------------------------ */
 
 function init() {
   videos();
   carousels();
-
-  if (reduce) {
-    $$('[data-reveal]').forEach((el) => (el.style.opacity = '1'));
-    anchors();
-    nav();
-    return;
-  }
-
-  smoothScroll();
-  anchors();
-  hero();
   nav();
-  reveals();
-
-  // Fonts can shift layout after first paint; refresh trigger positions once they settle.
-  document.fonts?.ready.then(() => ScrollTrigger.refresh());
-  window.addEventListener('load', () => ScrollTrigger.refresh());
+  if (reduce) $$('[data-reveal], [data-media]').forEach((el) => el.classList.add('is-in'));
+  else reveals();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -34,7 +34,7 @@ const count = media.type === 'video' ? 0 : media.images.length;
 {media.type === 'images' && (
   <figure class="fig carousel" data-media data-carousel role="region" aria-roledescription="carousel" aria-label={media.label}>
     <div class="fig__frame">
-      <div class="carousel__track" data-lenis-prevent>
+      <div class="carousel__track">
         {media.images.map((img, i) => (
           <div class="carousel__slide" role="group" aria-label={`${i + 1} of ${count}`}>
             <Image src={img} alt={media.alts[i]} widths={[640, 960, 1280]} sizes="(min-width: 900px) 720px, 100vw" loading={i === 0 ? 'eager' : 'lazy'} format="webp" quality={78} />
@@ -58,7 +58,7 @@ const count = media.type === 'video' ? 0 : media.images.length;
     <div class="fig__stage">
       <div class="phone">
         <div class="phone__screen">
-          <div class="carousel__track" data-lenis-prevent>
+          <div class="carousel__track">
             {media.images.map((img, i) => (
               <div class="carousel__slide" role="group" aria-label={`${i + 1} of ${count}`}>
                 <Image src={img} alt={media.alts[i]} widths={[390, 780]} sizes="260px" loading={i === 0 ? 'eager' : 'lazy'} format="webp" quality={80} />
