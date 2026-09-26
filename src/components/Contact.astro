@@ -3,10 +3,9 @@ const email = 'saib@andrew.cmu.edu';
 const year = new Date().getFullYear();
 ---
 
-<section class="contact" id="contact">
+<section class="contact" id="contact" aria-labelledby="contact-title">
   <div class="container">
-    <p class="eyebrow" data-reveal>Contact</p>
-    <h2 class="contact__title" data-reveal>Let&rsquo;s build something.</h2>
+    <h2 class="section-label" id="contact-title"><span data-reveal>Contact</span></h2>
     <a class="contact__mail" href={`mailto:${email}`} data-reveal>{email}</a>
     <p class="contact__sub" data-reveal>Carnegie Mellon University · Pittsburgh, PA</p>
   </div>
@@ -15,6 +14,7 @@ const year = new Date().getFullYear();
 <footer class="footer" role="contentinfo">
   <div class="container footer__inner">
     <span>&copy; {year} Sai Bhandar</span>
-    <a href="#top">Back to top</a>
+    <span>Built with Astro</span>
+    <a href="#top">Back to top<span aria-hidden="true">&nbsp;&uarr;</span></a>
   </div>
 </footer>
