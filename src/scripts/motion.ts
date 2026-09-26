@@ -34,7 +34,7 @@ function videos() {
 function carousels() {
   for (const c of $$('[data-carousel]')) {
     const track = $('.carousel__track', c)!;
-    const dots = $$('[data-dot]', c);
+    const counter = $('[data-count]', c);
     const slides = $$('.carousel__slide', c);
     const count = slides.length;
     if (count < 2) continue;
@@ -46,15 +46,11 @@ function carousels() {
     };
     const sync = () => {
       const i = index();
-      dots.forEach((d, k) => {
-        d.classList.toggle('is-active', k === i);
-        d.setAttribute('aria-selected', k === i ? 'true' : 'false');
-      });
+      if (counter) counter.textContent = `${i + 1} / ${count}`;
     };
 
     $('[data-prev]', c)?.addEventListener('click', () => go(index() - 1));
     $('[data-next]', c)?.addEventListener('click', () => go(index() + 1));
-    dots.forEach((d, k) => d.addEventListener('click', () => go(k)));
     c.addEventListener('keydown', (e) => {
       const ke = e as KeyboardEvent;
       if (ke.key === 'ArrowLeft') go(index() - 1);
@@ -153,7 +149,7 @@ function nav() {
 
 function reveals() {
   // Section headers and contact block: simple staggered rise.
-  for (const group of ['.work__head', '.contact .container']) {
+  for (const group of ['.section-label', '.contact .container']) {
     const root = $(group);
     if (!root) continue;
     const items = $$('[data-reveal]', root);
@@ -174,11 +170,11 @@ function reveals() {
     });
 
     if (media) {
-      const isPhone = media.classList.contains('media--phone');
+      const isPhone = media.classList.contains('fig--phone');
       gsap.fromTo(media,
-        isPhone ? { y: 60, opacity: 0, scale: 0.94 } : { clipPath: 'inset(14% 8% 14% 8% round 18px)', scale: 0.92, opacity: 0.4 },
+        isPhone ? { y: 60, opacity: 0, scale: 0.94 } : { clipPath: 'inset(14% 8% 14% 8% round 2px)', scale: 0.92, opacity: 0.4 },
         isPhone ? { y: 0, opacity: 1, scale: 1, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: media, start: 'top 82%', once: true } }
-                : { clipPath: 'inset(0% 0% 0% 0% round 18px)', scale: 1, opacity: 1, duration: 1.3, ease: 'power3.out', scrollTrigger: { trigger: media, start: 'top 82%', once: true } },
+                : { clipPath: 'inset(0% 0% 0% 0% round 2px)', scale: 1, opacity: 1, duration: 1.3, ease: 'power3.out', scrollTrigger: { trigger: media, start: 'top 82%', once: true } },
       );
     }
 
