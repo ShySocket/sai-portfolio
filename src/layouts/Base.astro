@@ -3,7 +3,6 @@ import '@fontsource-variable/archivo/standard.css';
 import '@fontsource/instrument-serif/400.css';
 import '../styles/global.css';
 import 'lenis/dist/lenis.css';
-import { projects } from '../data/projects';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const title = 'Sai Bhandar | Business + CS @ CMU';
@@ -32,16 +31,7 @@ const canonical = new URL(base + '/', Astro.site).href;
     <script is:inline>document.documentElement.classList.add('js');</script>
   </head>
   <body>
-    <div class="progress" aria-hidden="true"></div>
 
-    <nav class="index" aria-label="Project index">
-      {projects.map((p, i) => (
-        <a class="index__item" href={`#${p.slug}`} data-index-for={p.slug}>
-          <span class="index__label">{String(i + 1).padStart(2, '0')} {p.title}</span>
-          <span class="index__dot"></span>
-        </a>
-      ))}
-    </nav>
 
     <slot />
 

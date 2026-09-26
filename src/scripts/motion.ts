@@ -106,21 +106,7 @@ function hero() {
     .fromTo('.nav', { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.3);
 }
 
-function progress() {
-  gsap.to('.progress', {
-    scaleX: 1,
-    ease: 'none',
-    scrollTrigger: { trigger: document.documentElement, start: 'top top', end: 'bottom bottom', scrub: 0.3 },
-  });
-}
-
 function nav() {
-  ScrollTrigger.create({
-    start: 'top -40px',
-    end: 'max',
-    toggleClass: { targets: '.nav', className: 'is-scrolled' },
-  });
-
   const link = (id: string) => $(`.nav__link[data-nav="${id}"]`);
   for (const id of ['work', 'contact']) {
     const el = document.getElementById(id);
@@ -134,23 +120,6 @@ function nav() {
     });
   }
 
-  for (const item of $$('[data-index-for]')) {
-    const el = document.getElementById(item.dataset.indexFor || '');
-    if (!el) continue;
-    ScrollTrigger.create({
-      trigger: el,
-      start: 'top 55%',
-      end: 'bottom 45%',
-      onToggle: (self) => item.classList.toggle('is-active', self.isActive),
-    });
-  }
-}
-
-function rules() {
-  // Hairlines draw left to right as they enter (CSS transition on ::after, keyed by .is-drawn).
-  for (const el of $$('[data-rule]')) {
-    ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => el.classList.add('is-drawn') });
-  }
 }
 
 function reveals() {
@@ -160,7 +129,7 @@ function reveals() {
       scrollTrigger: { trigger, start, once: true },
     });
 
-  for (const root of $$('.work > .container > .section-label, .contact .container')) rise($$('[data-reveal]', root), root, 'top 85%');
+  for (const root of $$('.contact .container')) rise($$('[data-reveal]', root), root, 'top 85%');
 
   for (const project of $$('.project')) {
     rise($$('[data-reveal]', project), project, 'top 75%');
@@ -177,7 +146,6 @@ function init() {
 
   if (reduce) {
     $$('[data-reveal]').forEach((el) => (el.style.opacity = '1'));
-    $$('[data-rule]').forEach((el) => el.classList.add('is-drawn'));
     anchors();
     nav();
     return;
@@ -186,9 +154,7 @@ function init() {
   smoothScroll();
   anchors();
   hero();
-  progress();
   nav();
-  rules();
   reveals();
 
   // Fonts can shift layout after first paint; refresh trigger positions once they settle.
