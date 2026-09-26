@@ -6,7 +6,6 @@ import Lenis from 'lenis';
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const finePointer = window.matchMedia('(pointer: fine)').matches;
 const desktop = () => window.matchMedia('(min-width: 900px)').matches;
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
@@ -110,8 +109,7 @@ function hero() {
     .fromTo('.hero__eyebrow', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.35)
     .fromTo('.hero__tag', { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9 }, 0.7)
     .fromTo('.hero__cta > *', { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08 }, 0.85)
-    .fromTo('.nav', { y: -16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.5)
-    .fromTo('.hero__hint', { opacity: 0 }, { opacity: 1, duration: 1 }, 1.3);
+    .fromTo('.nav', { y: -16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8 }, 0.5);
 
   // Hero content drifts up and fades as the page scrolls.
   gsap.to('.hero__inner', {
@@ -206,48 +204,6 @@ function reveals() {
   }
 }
 
-function magnetic() {
-  if (!finePointer) return;
-  for (const el of $$('.magnetic')) {
-    const strength = el.classList.contains('contact__mail') ? 0.18 : 0.32;
-    const xTo = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
-    const yTo = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
-    el.addEventListener('mousemove', (e) => {
-      const r = el.getBoundingClientRect();
-      xTo((e.clientX - (r.left + r.width / 2)) * strength);
-      yTo((e.clientY - (r.top + r.height / 2)) * strength);
-    });
-    el.addEventListener('mouseleave', () => {
-      gsap.to(el, { x: 0, y: 0, duration: 0.7, ease: 'elastic.out(1, 0.45)' });
-    });
-  }
-}
-
-function tilt() {
-  if (!finePointer) return;
-  for (const el of $$('[data-tilt]')) {
-    const max = el.classList.contains('phone') ? 10 : 6;
-    const rx = gsap.quickTo(el, 'rotationX', { duration: 0.5, ease: 'power3.out' });
-    const ry = gsap.quickTo(el, 'rotationY', { duration: 0.5, ease: 'power3.out' });
-    gsap.set(el, { transformPerspective: 1100 });
-    const glare = $('.media__glare', el);
-    el.addEventListener('pointermove', (e) => {
-      const r = el.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      ry((px - 0.5) * max * 2);
-      rx((0.5 - py) * max * 2);
-      if (glare) {
-        el.style.setProperty('--gx', `${px * 100}%`);
-        el.style.setProperty('--gy', `${py * 100}%`);
-      }
-    });
-    el.addEventListener('pointerleave', () => {
-      gsap.to(el, { rotationX: 0, rotationY: 0, duration: 0.9, ease: 'elastic.out(1, 0.5)' });
-    });
-  }
-}
-
 /* ------------------------------------------------------------------ */
 
 function init() {
@@ -267,8 +223,6 @@ function init() {
   progress();
   nav();
   reveals();
-  magnetic();
-  tilt();
 
   // Fonts can shift layout after first paint; refresh trigger positions once they settle.
   document.fonts?.ready.then(() => ScrollTrigger.refresh());

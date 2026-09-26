@@ -33,7 +33,7 @@ const n = String(index + 1).padStart(2, '0');
       <div class="project__links" data-reveal>
         {p.links.map((l) => (
           <a
-            class:list={['btn', 'btn--sm', 'magnetic', { 'btn--primary': l.kind === 'play', 'btn--code': l.kind === 'code' }]}
+            class:list={['btn', 'btn--sm', { 'btn--primary': l.kind === 'play', 'btn--code': l.kind === 'code' }]}
             href={l.href}
             target="_blank"
             rel="noopener"

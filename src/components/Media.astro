@@ -8,7 +8,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 {media.type === 'video' && (
-  <div class="media" data-tilt data-media>
+  <div class="media" data-media>
     <div class="media__inner" data-parallax>
       <video
         class="media__el"
@@ -23,13 +23,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <source src={`${base}/${media.src}`} type="video/mp4" />
       </video>
     </div>
-    <div class="media__glare" aria-hidden="true"></div>
-    <span class="media__badge"><i aria-hidden="true"></i>{live ? 'Recorded gameplay' : 'Gameplay'}</span>
   </div>
 )}
 
 {media.type === 'images' && (
-  <div class="media" data-tilt data-media>
+  <div class="media" data-media>
     <div class="carousel" data-carousel role="region" aria-roledescription="carousel" aria-label={media.label}>
       <div class="carousel__track" data-lenis-prevent>
         {media.images.map((img, i) => (
@@ -52,13 +50,12 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         </button>
       </div>
     </div>
-    <div class="media__glare" aria-hidden="true"></div>
   </div>
 )}
 
 {media.type === 'phone' && (
   <div class="media media--phone" data-media>
-    <div class="phone" data-tilt>
+    <div class="phone">
       <div class="phone__screen">
         <div class="carousel" data-carousel role="region" aria-roledescription="carousel" aria-label={media.label}>
           <div class="carousel__track" data-lenis-prevent>

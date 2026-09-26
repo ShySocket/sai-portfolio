@@ -5,22 +5,12 @@ import Hero from '../components/Hero.astro';
 import Project from '../components/Project.astro';
 import Contact from '../components/Contact.astro';
 import { projects } from '../data/projects';
-
-const marquee = [...projects, ...projects];
 ---
 
 <Base>
   <Nav />
   <main>
     <Hero />
-
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee__track">
-        {marquee.map((p) => (
-          <span class="marquee__item">{p.title}<i></i></span>
-        ))}
-      </div>
-    </div>
 
     <section class="work" id="work" aria-labelledby="work-title">
       <div class="container">
