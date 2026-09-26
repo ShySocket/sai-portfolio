@@ -6,7 +6,6 @@ import Lenis from 'lenis';
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const desktop = () => window.matchMedia('(min-width: 900px)').matches;
 
 const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
 const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => Array.from(root.querySelectorAll<T>(sel));
@@ -147,47 +146,26 @@ function nav() {
   }
 }
 
-function reveals() {
-  // Section headers and contact block: simple staggered rise.
-  for (const group of ['.section-label', '.contact .container']) {
-    const root = $(group);
-    if (!root) continue;
-    const items = $$('[data-reveal]', root);
-    gsap.fromTo(items, { y: 28, opacity: 0 }, {
-      y: 0, opacity: 1, duration: 1, ease: 'power3.out', stagger: 0.08,
-      scrollTrigger: { trigger: root, start: 'top 82%', once: true },
-    });
+function rules() {
+  // Hairlines draw left to right as they enter (CSS transition on ::after, keyed by .is-drawn).
+  for (const el of $$('[data-rule]')) {
+    ScrollTrigger.create({ trigger: el, start: 'top 90%', once: true, onEnter: () => el.classList.add('is-drawn') });
   }
+}
+
+function reveals() {
+  const rise = (targets: Element[], trigger: Element, start = 'top 80%') =>
+    gsap.fromTo(targets, { y: 12, opacity: 0 }, {
+      y: 0, opacity: 1, duration: 0.7, ease: 'power2.out', stagger: 0.04,
+      scrollTrigger: { trigger, start, once: true },
+    });
+
+  for (const root of $$('.work > .container > .section-label, .contact .container')) rise($$('[data-reveal]', root), root, 'top 85%');
 
   for (const project of $$('.project')) {
-    const text = $$('[data-reveal]', project);
+    rise($$('[data-reveal]', project), project, 'top 75%');
     const media = $('[data-media]', project);
-    const inner = media ? $('[data-parallax]', media) : null;
-
-    gsap.fromTo(text, { y: 34, opacity: 0 }, {
-      y: 0, opacity: 1, duration: 1, ease: 'power3.out', stagger: 0.07,
-      scrollTrigger: { trigger: project, start: 'top 72%', once: true },
-    });
-
-    if (media) {
-      const isPhone = media.classList.contains('fig--phone');
-      gsap.fromTo(media,
-        isPhone ? { y: 60, opacity: 0, scale: 0.94 } : { clipPath: 'inset(14% 8% 14% 8% round 2px)', scale: 0.92, opacity: 0.4 },
-        isPhone ? { y: 0, opacity: 1, scale: 1, duration: 1.2, ease: 'power3.out', scrollTrigger: { trigger: media, start: 'top 82%', once: true } }
-                : { clipPath: 'inset(0% 0% 0% 0% round 2px)', scale: 1, opacity: 1, duration: 1.3, ease: 'power3.out', scrollTrigger: { trigger: media, start: 'top 82%', once: true } },
-      );
-    }
-
-    if (inner) {
-      ScrollTrigger.matchMedia({
-        '(min-width: 900px)': () => {
-          gsap.fromTo(inner, { yPercent: -5 }, {
-            yPercent: 5, ease: 'none',
-            scrollTrigger: { trigger: project, start: 'top bottom', end: 'bottom top', scrub: true },
-          });
-        },
-      });
-    }
+    if (media) rise([media], media, 'top 85%');
   }
 }
 
@@ -199,6 +177,7 @@ function init() {
 
   if (reduce) {
     $$('[data-reveal]').forEach((el) => (el.style.opacity = '1'));
+    $$('[data-rule]').forEach((el) => el.classList.add('is-drawn'));
     anchors();
     nav();
     return;
@@ -209,6 +188,7 @@ function init() {
   hero();
   progress();
   nav();
+  rules();
   reveals();
 
   // Fonts can shift layout after first paint; refresh trigger positions once they settle.
