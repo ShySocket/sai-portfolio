@@ -14,7 +14,7 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const THRESHOLD = 95;
-const PORT = 4321;
+const PORT = Number(process.env.PORT) || 4321;
 const SITE = `http://127.0.0.1:${PORT}/sai-portfolio/`;
 const OUT = resolve(process.env.A11Y_OUT || join(homedir(), 'Documents/autopilot/artifacts/sai-portfolio-a11y'));
 const root = resolve(new globalThis.URL('..', import.meta.url).pathname);
@@ -28,7 +28,7 @@ if (!noBuild) {
   execFileSync(bin('astro'), ['build'], { cwd: root, stdio: 'inherit' });
 }
 
-const server = spawn(bin('astro'), ['preview', '--host', '127.0.0.1', '--port', String(PORT)], { cwd: root, stdio: 'ignore' });
+const server = spawn(process.execPath, [join(root, 'scripts/serve.mjs'), String(PORT)], { cwd: root, stdio: 'ignore' });
 const stop = () => { if (!server.killed) server.kill('SIGTERM'); };
 process.on('exit', stop);
 process.on('SIGINT', () => { stop(); process.exit(130); });

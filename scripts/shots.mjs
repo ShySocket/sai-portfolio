@@ -1,31 +1,43 @@
 #!/usr/bin/env node
-// Deterministic full-page screenshots of the built site, for visual-regression checks.
+// Playwright screenshots and page checks for the built site.
 //
-//   node scripts/shots.mjs before          -> before-mobile.png, before-desktop.png
-//   node scripts/shots.mjs after           -> after-*.png
+//   node scripts/shots.mjs before            -> before-{mobile,tablet,desktop}.png (+ -fold.png, first viewport only)
+//   node scripts/shots.mjs after             -> after-*.png
 //   node scripts/shots.mjs diff before after -> diff-*.png + changed-pixel counts (exit 1 above TOLERANCE)
+//   node scripts/shots.mjs check             -> page checks at every viewport; exit 1 on any FAIL
 //
-// Assumes dist/ is built. Uses the Chrome bundled on this Mac via puppeteer-core (a
-// lighthouse dependency). Emulates prefers-reduced-motion and pauses videos so the
-// output is stable between runs. Output dir: $A11Y_OUT or the autopilot artifacts dir.
+// Options: --url <site>  use an already-running server instead of serving dist/ (scripts/serve.mjs)
+//          --vp mobile,desktop  limit viewports
+// Env:     PORT (default 4321) for the dist/ server; $A11Y_OUT for output (default: autopilot artifacts dir).
+//
+// Uses the installed Google Chrome (channel 'chrome'), so no browser download. Screenshots emulate
+// prefers-reduced-motion and freeze videos on frame 0 so output is stable between runs.
 
-import { spawn } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
-import puppeteer from 'puppeteer-core';
+import { chromium } from 'playwright';
 import sharp from 'sharp';
+import { serve } from './serve.mjs';
 
-const PORT = 4321;
-const SITE = `http://127.0.0.1:${PORT}/sai-portfolio/`;
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const PORT = Number(process.env.PORT) || 4321;
 const OUT = resolve(process.env.A11Y_OUT || join(homedir(), 'Documents/autopilot/artifacts/sai-portfolio-a11y'));
 const root = resolve(new globalThis.URL('..', import.meta.url).pathname);
 const TOLERANCE = 0.01; // % of pixels allowed to differ (video frame-0 decode jitter is ~0.004%)
-const VIEWPORTS = { mobile: { width: 390, height: 844, deviceScaleFactor: 2 }, desktop: { width: 1440, height: 900, deviceScaleFactor: 1 } };
+const CLS_MAX = 0.02;
+const ALL_VIEWPORTS = {
+  mobile: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  tablet: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1 },
+  desktop: { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 },
+};
 
 mkdirSync(OUT, { recursive: true });
-const [cmd, ...rest] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const opt = (name) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv.splice(i, 2)[1] : undefined; };
+const url = opt('url');
+const vpList = opt('vp');
+const VIEWPORTS = Object.fromEntries(Object.entries(ALL_VIEWPORTS).filter(([k]) => !vpList || vpList.split(',').includes(k)));
+const [cmd, ...rest] = argv;
 
 if (cmd === 'diff') {
   const [a, b] = rest;
@@ -33,7 +45,9 @@ if (cmd === 'diff') {
   let changed = false;
   for (const vp of Object.keys(VIEWPORTS)) {
     const pa = join(OUT, `${a}-${vp}.png`), pb = join(OUT, `${b}-${vp}.png`);
-    const [ia, ib] = await Promise.all([pa, pb].map((p) => sharp(p).raw().ensureAlpha().toBuffer({ resolveWithObject: true })));
+    let ia, ib;
+    try { [ia, ib] = await Promise.all([pa, pb].map((p) => sharp(p).raw().ensureAlpha().toBuffer({ resolveWithObject: true }))); }
+    catch { console.log(`${vp}: skipped (missing ${a} or ${b} shot)`); continue; }
     const w = Math.min(ia.info.width, ib.info.width), h = Math.min(ia.info.height, ib.info.height);
     const diff = Buffer.alloc(w * h * 4);
     let n = 0, minX = w, minY = h, maxX = 0, maxY = 0;
@@ -54,39 +68,153 @@ if (cmd === 'diff') {
 
 if (!cmd || cmd.startsWith('-')) usage();
 
-const server = spawn(join(root, 'node_modules/.bin/astro'), ['preview', '--host', '127.0.0.1', '--port', String(PORT)], { cwd: root, stdio: 'ignore' });
-const stop = () => { if (!server.killed) server.kill('SIGTERM'); };
-process.on('exit', stop);
-const t0 = Date.now();
-while (Date.now() - t0 < 20000) { try { if ((await fetch(SITE)).ok) break; } catch {} await new Promise((r) => setTimeout(r, 250)); }
+const SITE = url || `http://127.0.0.1:${PORT}/sai-portfolio/`;
+const server = url ? null : await serve(join(root, 'dist'), PORT);
+const stop = () => server?.close();
 
-const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--force-prefers-reduced-motion', '--hide-scrollbars'] });
+const browser = await chromium.launch({ channel: 'chrome', args: ['--hide-scrollbars'] });
+let failed = false;
 try {
-  for (const [vp, size] of Object.entries(VIEWPORTS)) {
-    const page = await browser.newPage();
-    await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
-    await page.setViewport(size);
-    await page.goto(SITE, { waitUntil: 'networkidle0' });
-    await page.evaluate(async () => {
-      await document.fonts.ready;
-      // Freeze videos on frame 0 (the IntersectionObserver in motion.ts would otherwise play them).
-      const videos = [...document.querySelectorAll('video')];
-      for (const v of videos) { v.play = () => Promise.resolve(); v.pause(); }
-      for (const el of document.querySelectorAll('[data-reveal]')) el.style.opacity = '1';
-      // Load lazy images by walking the page once.
-      for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 40)); }
-      window.scrollTo(0, 0);
-      await Promise.all(videos.map((v) => new Promise((r) => { v.pause(); v.addEventListener('seeked', r, { once: true }); v.currentTime = 0; setTimeout(r, 1500); })));
-      await new Promise((r) => setTimeout(r, 300));
-    });
-    const file = join(OUT, `${cmd}-${vp}.png`);
-    await page.screenshot({ path: file, fullPage: true });
-    console.log(`${file} ${size.width}x${await page.evaluate(() => document.documentElement.scrollHeight)}`);
-    await page.close();
-  }
+  if (cmd === 'check') failed = await check();
+  else await shots(cmd);
 } finally {
   await browser.close();
   stop();
 }
+process.exit(failed ? 1 : 0);
 
-function usage() { console.error('usage: shots.mjs <name> | diff <a> <b>'); process.exit(2); }
+async function shots(name) {
+  for (const [vp, device] of Object.entries(VIEWPORTS)) {
+    const context = await browser.newContext({ ...device, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    await page.goto(SITE, { waitUntil: 'networkidle' });
+    await settle(page);
+    await page.evaluate(async () => {
+      // Freeze videos on frame 0 (the site's IntersectionObserver would otherwise play them).
+      const videos = [...document.querySelectorAll('video')];
+      for (const v of videos) { v.play = () => Promise.resolve(); v.pause(); }
+      await Promise.all(videos.map((v) => new Promise((r) => { v.addEventListener('seeked', r, { once: true }); v.currentTime = 0; setTimeout(r, 1500); })));
+      await new Promise((r) => setTimeout(r, 300));
+    });
+    const file = join(OUT, `${name}-${vp}.png`);
+    await page.screenshot({ path: file, fullPage: true });
+    await page.screenshot({ path: join(OUT, `${name}-${vp}-fold.png`) });
+    console.log(`${file} ${device.viewport.width}x${await page.evaluate(() => document.documentElement.scrollHeight)}`);
+    await context.close();
+  }
+}
+
+// Load fonts and lazy media by walking the page once, then return to the top. With motion on, walk at
+// reading pace (150ms per 600px) so IntersectionObserver reveals fire; faster steps skip them.
+async function settle(page, step = 40) {
+  await page.evaluate(async (step) => {
+    await document.fonts.ready;
+    for (let y = 0; y < document.body.scrollHeight; y += 600) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, step)); }
+    window.scrollTo(0, document.body.scrollHeight); // hold at the bottom so the last observers fire
+    await new Promise((r) => setTimeout(r, step * 4));
+    window.scrollTo(0, 0);
+  }, step);
+  await page.waitForTimeout(800); // let one-shot reveals finish
+}
+
+async function check() {
+  const results = [];
+  const report = (level, vp, mode, id, detail) => {
+    results.push({ level, vp, mode, id, detail });
+    console.log(`${level.padEnd(4)} ${vp}/${mode} ${id}${detail ? ` — ${detail}` : ''}`);
+  };
+
+  for (const [vp, device] of Object.entries(VIEWPORTS)) {
+    for (const mode of ['reduce', 'motion', 'nojs']) {
+      const context = await browser.newContext({
+        ...device,
+        reducedMotion: mode === 'reduce' ? 'reduce' : 'no-preference',
+        javaScriptEnabled: mode !== 'nojs',
+      });
+      const page = await context.newPage();
+      const errors = [];
+      page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+      page.on('pageerror', (e) => errors.push(String(e)));
+      page.on('response', (r) => { if (r.status() >= 400 && r.url().startsWith(new URL(SITE).origin)) errors.push(`${r.status()} ${r.url()}`); });
+      if (mode !== 'nojs') {
+        await page.addInitScript(() => {
+          window.__cls = 0;
+          new PerformanceObserver((l) => { for (const e of l.getEntries()) if (!e.hadRecentInput) window.__cls += e.value; })
+            .observe({ type: 'layout-shift', buffered: true });
+        });
+      }
+      await page.goto(SITE, { waitUntil: 'networkidle' });
+      if (mode === 'nojs') await page.waitForTimeout(300);
+      else await settle(page, mode === 'motion' ? 150 : 40);
+
+      for (const e of errors) report('FAIL', vp, mode, 'console-or-network-error', e);
+
+      const facts = await page.evaluate(() => {
+        const vw = document.documentElement.clientWidth;
+        const overflow = document.documentElement.scrollWidth > vw + 1
+          ? [...document.querySelectorAll('body *')]
+              .filter((el) => { const r = el.getBoundingClientRect(); return r.width && r.right > vw + 1 && getComputedStyle(el).position !== 'fixed'; })
+              .slice(0, 5).map((el) => `${el.tagName.toLowerCase()}${el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\s+/).join('.') : ''} right=${Math.round(el.getBoundingClientRect().right)}`)
+          : [];
+        const effOpacity = (el) => { let o = 1; for (let n = el; n && n.nodeType === 1; n = n.parentElement) o *= Number(getComputedStyle(n).opacity); return o; };
+        const hidden = [...document.querySelectorAll('main h1, main h2, main h3, main p, main li, main figure, main a, main video, main img')]
+          .filter((el) => el.getClientRects().length && getComputedStyle(el).visibility !== 'hidden')
+          .filter((el) => effOpacity(el) < 0.99)
+          .slice(0, 5).map((el) => `${el.tagName.toLowerCase()} "${(el.textContent || el.getAttribute('alt') || '').trim().slice(0, 40)}"`);
+        const small = [...document.querySelectorAll('a[href], button, [role="button"], input, select, textarea')]
+          .filter((el) => el.getClientRects().length)
+          .filter((el) => { const r = el.getBoundingClientRect(); return r.width < 24 || r.height < 24; })
+          .slice(0, 6).map((el) => `${el.tagName.toLowerCase()} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 30)}" ${Math.round(el.getBoundingClientRect().width)}x${Math.round(el.getBoundingClientRect().height)}`);
+        return {
+          overflow,
+          hidden,
+          small,
+          noPoster: [...document.querySelectorAll('video:not([poster])')].length,
+          noAlt: [...document.querySelectorAll('img:not([alt])')].length,
+          noHref: [...document.querySelectorAll('a:not([href])')].length,
+          blankNoRel: [...document.querySelectorAll('a[target="_blank"]:not([rel~="noopener"])')].length,
+          running: document.getAnimations ? document.getAnimations().filter((a) => a.playState === 'running').length : 0,
+          cls: window.__cls ?? 0,
+        };
+      });
+
+      if (facts.overflow.length) report('FAIL', vp, mode, 'horizontal-overflow', facts.overflow.join('; '));
+      if (facts.hidden.length) report('FAIL', vp, mode, 'content-not-visible', facts.hidden.join('; '));
+      if (facts.noPoster) report('FAIL', vp, mode, 'video-without-poster', `${facts.noPoster}`);
+      if (facts.noAlt) report('FAIL', vp, mode, 'img-without-alt', `${facts.noAlt}`);
+      if (facts.noHref) report('FAIL', vp, mode, 'link-without-href', `${facts.noHref}`);
+      if (facts.cls > CLS_MAX) report('FAIL', vp, mode, 'layout-shift', `CLS ${facts.cls.toFixed(3)} > ${CLS_MAX}`);
+      if (facts.small.length) report('WARN', vp, mode, 'target-under-24px', facts.small.join('; '));
+      if (facts.blankNoRel) report('WARN', vp, mode, 'target-blank-without-noopener', `${facts.blankNoRel}`);
+      if (mode === 'reduce' && facts.running) report('WARN', vp, mode, 'animations-running-under-reduced-motion', `${facts.running}`);
+
+      // Keyboard: every focus stop must show a visible indicator.
+      if (mode === 'reduce') {
+        const unfocusable = [];
+        for (let i = 0; i < 40; i++) {
+          await page.keyboard.press('Tab');
+          const f = await page.evaluate(() => {
+            const el = document.activeElement;
+            if (!el || el === document.body) return null;
+            const s = getComputedStyle(el);
+            const ring = (s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0) || s.boxShadow !== 'none';
+            return { ring, label: `${el.tagName.toLowerCase()} "${(el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 30)}"` };
+          });
+          if (!f) break;
+          if (!f.ring) unfocusable.push(f.label);
+        }
+        if (unfocusable.length) report('FAIL', vp, mode, 'focus-not-visible', [...new Set(unfocusable)].slice(0, 6).join('; '));
+      }
+      await context.close();
+    }
+  }
+
+  const fails = results.filter((r) => r.level === 'FAIL').length;
+  const warns = results.filter((r) => r.level === 'WARN').length;
+  const file = join(OUT, 'check.json');
+  writeFileSync(file, JSON.stringify({ site: SITE, fails, warns, results }, null, 2));
+  console.log(`\n${fails ? 'FAIL' : 'PASS'}: ${fails} fail, ${warns} warn -> ${file}`);
+  return fails > 0;
+}
+
+function usage() { console.error('usage: shots.mjs <name> | check | diff <a> <b>  [--url <site>] [--vp mobile,tablet,desktop]'); process.exit(2); }
