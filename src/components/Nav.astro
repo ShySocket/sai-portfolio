@@ -1,12 +1,13 @@
 ---
+import CopyEmail from './CopyEmail.astro';
 ---
 
-<header class="nav" role="banner">
-  <div class="container nav__inner">
-    <a href="#top" class="nav__brand" aria-label="Sai Bhandar, back to top">Sai Bhandar</a>
-    <ul class="nav__links">
-      <li><a href="#work" class="nav__link" data-nav="work">Work</a></li>
-      <li><a href="#contact" class="nav__link" data-nav="contact">Contact</a></li>
-    </ul>
-  </div>
+<header class="top">
+  <nav class="wrap nav" aria-label="Site">
+    <a class="nav__name" href="#top">Sai Bhandar</a>
+    <div class="nav__right">
+      <a class="nav__link" href="#projects">Projects</a>
+      <CopyEmail size="nav" />
+    </div>
+  </nav>
 </header>

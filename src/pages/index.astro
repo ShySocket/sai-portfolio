@@ -3,22 +3,31 @@ import Base from '../layouts/Base.astro';
 import Nav from '../components/Nav.astro';
 import Hero from '../components/Hero.astro';
 import Project from '../components/Project.astro';
+import Index from '../components/Index.astro';
 import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
 import { projects } from '../data/projects';
+
+const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
+const [first, ...rest] = projects;
+const single = rest.filter((p) => !['sunrise', 'gyroblaster'].includes(p.slug));
 ---
 
 <Base>
   <Nav />
-  <main>
-    <Hero />
-
-    <section class="work" id="work" aria-labelledby="work-title">
-      <div class="container">
-        <h2 class="section-label" id="work-title">Work</h2>
-        {projects.map((p, i) => <Project project={p} index={i} />)}
-      </div>
-    </section>
-
+  <main class="wrap">
+    <!-- Band: name, the Sidequest stage and notes, then the index. Grid areas at >= 1200px; stacked below. -->
+    <div class="band">
+      <Hero />
+      <Project project={first} />
+      <Index />
+    </div>
+    {single.map((p) => <Project project={p} />)}
+    <div class="pair">
+      <Project project={bySlug('sunrise')} />
+      <Project project={bySlug('gyroblaster')} />
+    </div>
     <Contact />
   </main>
+  <Footer />
 </Base>

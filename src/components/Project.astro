@@ -1,57 +1,23 @@
 ---
-import Media from './Media.astro';
+// One project entry. The layout family follows the media's shape: a wide stage (Sidequest), a portrait
+// phone with its QR handoff (Lazer Shooter), a screen spread (ReliefIQ), or one half of a pair (Sunrise,
+// GyroBlaster). The media always sits next to the sentence it proves.
+import Clip from './Clip.astro';
+import EntryText from './EntryText.astro';
+import Phone from './Phone.astro';
+import Spread from './Spread.astro';
 import type { Project } from '../data/projects';
+import { presentation } from '../data/presentation';
 
-interface Props { project: Project; index: number }
-const { project: p, index } = Astro.props;
-const n = String(index + 1).padStart(2, '0');
+interface Props { project: Project }
+const { project: p } = Astro.props;
+const pres = presentation[p.slug];
+const family = pres.family;
 ---
 
-<article class="project" id={p.slug} data-project={p.slug}>
-  <header class="project__head">
-    <span class="project__no" data-reveal>{n}</span>
-    <h3 class="project__title" data-reveal>{p.title}</h3>
-    <p class="project__kicker" data-reveal>{p.kicker}</p>
-  </header>
-
-  <div class="project__body">
-    <div class="project__text">
-      <p class="project__summary" data-reveal>{p.summary}</p>
-      {p.bullets && (
-        <ol class="notes">
-          {p.bullets.map((b) => (
-            <li data-reveal><span><b>{b.title}.</b> {b.body}</span></li>
-          ))}
-        </ol>
-      )}
-      <dl class="specs" data-reveal>
-        <div>
-          <dt>Stack</dt>
-          <dd>{p.tags.join(', ')}</dd>
-        </div>
-        {p.award && (
-          <div>
-            <dt>Award</dt>
-            <dd class="specs__award">{p.award}</dd>
-          </div>
-        )}
-        {p.links.length > 0 && (
-          <div>
-            <dt>Links</dt>
-            <dd class="specs__links">
-              {p.links.map((l) => (
-                <a class="tlink" href={l.href} target="_blank" rel="noopener">
-                  {l.label}<span aria-hidden="true">&nbsp;&#8599;</span>
-                </a>
-              ))}
-            </dd>
-          </div>
-        )}
-      </dl>
-    </div>
-
-    <div class="project__media">
-      <Media media={p.media} title={p.title} fig={index + 1} />
-    </div>
-  </div>
+<article class:list={['entry', `entry--${family}`]} id={p.slug}>
+  {(family === 'stage' || family === 'pair') && pres.clip && <Clip project={p} clip={pres.clip} lcp={family === 'stage'} />}
+  <EntryText project={p} pres={pres} />
+  {family === 'phone' && <Phone project={p} />}
+  {family === 'spread' && <Spread project={p} />}
 </article>

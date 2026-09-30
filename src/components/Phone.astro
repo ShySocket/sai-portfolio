@@ -1,0 +1,41 @@
+---
+// Lazer Shooter: the screenshot is itself the field (no drawn bezel), at its own portrait aspect, with the
+// phone handoff beside it: a QR card for fine pointers at >= 640px; phones use the Play key directly.
+// Photos dropped into src/assets/lazer/ later join the row as further wells at the same height.
+import { Image } from 'astro:assets';
+import type { Project } from '../data/projects';
+
+interface Props { project: Project }
+const { project: p } = Astro.props;
+const media = p.media.type === 'phone' ? p.media : null;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const host = media?.qrHref.replace(/^https?:\/\//, '');
+
+// Photos Sai drops into src/assets/lazer/ join the field as 552px-high wells at their own aspect, with no code
+// change. Their alt text comes from the file name (e.g. unclear-target-hit.jpg), so name them descriptively.
+const photos = Object.entries(
+  import.meta.glob<{ default: ImageMetadata }>('../assets/lazer/*.{jpg,jpeg,png,webp}', { eager: true }),
+).map(([path, mod]) => ({
+  src: mod.default,
+  alt: `Lazer Shooter: ${path.split('/').pop()!.replace(/\.[a-z]+$/i, '').replace(/[-_]+/g, ' ')}`,
+}));
+---
+
+{media && (
+  <div class="phone">
+    <figure class="phone__field" aria-labelledby={`${p.slug}-title`}>
+      {media.images.map((img, i) => (
+        <Image class="phone__shot" src={img} alt={media.alts[i]} widths={[256, 512]} sizes="256px" format="webp" quality={82} loading="lazy" />
+      ))}
+    </figure>
+    {photos.map((p) => (
+      <Image class="phone__photo" src={p.src} alt={p.alt} height={552} densities={[1, 2]} format="webp" quality={80} loading="lazy" />
+    ))}
+    <a class="qr" href={media.qrHref} target="_blank" rel="noopener">
+      <img src={`${base}/${media.qr}`} alt={`QR code for ${media.qrHref}`} width="160" height="160" loading="lazy" />
+      <span class="qr__line">Scan to play on your phone</span>
+      <span class="qr__host">{host}</span>
+      <span class="sr"> (opens in a new tab)</span>
+    </a>
+  </div>
+)}
