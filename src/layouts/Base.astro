@@ -1,13 +1,17 @@
 ---
-import '@fontsource-variable/archivo';
-import '@fontsource/instrument-serif/400.css';
+import '@fontsource/funnel-display/latin-600.css';
+import '@fontsource-variable/funnel-sans/wght.css';
+import displayFont from '@fontsource/funnel-display/files/funnel-display-latin-600-normal.woff2?url';
+import sansFont from '@fontsource-variable/funnel-sans/files/funnel-sans-latin-wght-normal.woff2?url';
 import '../styles/global.css';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const title = 'Sai Bhandar | Business + CS @ CMU';
+// Built only from confirmed facts in PRODUCT.md and projects.ts (flagged for Sai's review).
 const description =
-  'Sai Bhandar builds games, computer-vision systems and tools from zero to one. Business + CS at Carnegie Mellon. Selected work: Sidequest, Lazer Shooter, ReliefIQ, Sunrise VR, GyroBlaster.';
+  'Sai Bhandar, Business + CS at Carnegie Mellon. Sidequest turns dashcam video into a playable level; Lazer Shooter is laser tag with on-device vision; ReliefIQ won 1st place at the CMU NOVA Hackathon.';
 const canonical = new URL(base + '/', Astro.site).href;
+const og = `${canonical}og.png`;
 ---
 
 <!doctype html>
@@ -17,23 +21,32 @@ const canonical = new URL(base + '/', Astro.site).href;
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#f6f4ef" />
+    <meta name="theme-color" content="#eceef0" />
+    <meta name="color-scheme" content="light" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" href={`${base}/favicon.png`} />
+    <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={sansFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={`${base}/media/sidequest-4.5.webp`} as="image" type="image/webp" fetchpriority="high" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sai Bhandar" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={`${canonical}media/sidequest-poster.jpg`} />
+    <meta property="og:image" content={og} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Sai Bhandar, Business + CS @ CMU, beside a paused Sidequest frame at 0:04.5" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={og} />
     <meta name="generator" content={Astro.generator} />
     <script is:inline>document.documentElement.classList.add('js');</script>
   </head>
   <body>
-
-
     <slot />
-
+    <div id="live" class="sr" aria-live="polite"></div>
     <script>
       import '../scripts/motion';
     </script>
