@@ -1,6 +1,7 @@
 ---
 // The jump index: each row carries the project's own proof at its true aspect, its title, and its
 // verbatim kicker drawn as a list with hairline separators (no middots). ReliefIQ carries its award.
+// Rows are plain jump links: the underlined title and the hover tint say so, with no disclosure glyph.
 import Icon from './Icon.astro';
 import { projects } from '../data/projects';
 import { presentation } from '../data/presentation';
@@ -27,7 +28,6 @@ const glyph = { play: 'player-play', phone: 'device-mobile', movie: 'movie', awa
               {p.award && <span class="row__award">{p.award}</span>}
             </span>
             <Icon name={glyph[pres.kind]} size={20} class:list={['row__kind', pres.kind === 'award' && 'row__kind--award']} />
-            <Icon name="chevron-down" size={20} class="row__go" />
           </a>
         </li>
       );

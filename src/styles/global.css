@@ -24,7 +24,7 @@
   --margin: 1rem;
   --gutter: 2rem;
   --content: 100rem; /* 1600px */
-  --measure: 66ch;
+  --measure: 58ch; /* 72-75 characters of Funnel Sans per line at 17px */
   --field-max: 70rem; /* 1120px */
   --well-max: 72rem; /* 1152px, the stage only */
   --entry-gap: 5rem;
@@ -112,12 +112,12 @@ p, li { text-wrap: pretty; }
 }
 
 /* Every pressable answers within a frame. */
-:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback) {
+:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full) {
   transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease,
     text-decoration-color var(--t-hover) ease;
   touch-action: manipulation;
 }
-:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback):active {
+:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full):active {
   transform: scale(0.97);
 }
 [aria-disabled='true']:active { transform: none; }
@@ -153,6 +153,19 @@ p, li { text-wrap: pretty; }
   text-decoration: underline 1px;
   text-underline-offset: 4px;
 }
+/* The address as text beside the copy key, where the row has room: one click selects all of it. */
+.nav__mail {
+  display: none;
+  font: 500 0.875rem/1.25rem var(--sans);
+  color: var(--ink-2);
+  user-select: all;
+  -webkit-user-select: all;
+}
+.nav__contact { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
+@media (min-width: 768px) {
+  .nav__mail { display: inline; }
+  .nav__right { column-gap: 1.5rem; } /* the address and its key group at 12px; Projects stands 24px off */
+}
 
 /* ------------------------------------------------------------------ keys */
 .key {
@@ -163,8 +176,9 @@ p, li { text-wrap: pretty; }
   text-decoration: none;
 }
 .key--primary {
-  height: 3rem; /* 48 */
-  padding: 0 1.25rem 0 1.5rem;
+  min-height: 3rem; /* 48 */
+  max-width: 100%;
+  padding: 0.5rem 1.25rem 0.5rem 1.5rem;
   border-radius: var(--r);
   background: var(--rose);
   color: var(--on-rose);
@@ -225,8 +239,11 @@ p, li { text-wrap: pretty; }
 
 /* ------------------------------------------------------------------ hero */
 .band { padding-top: 1rem; }
+/* The name is capped by its own column (cqi of .hero), so "Bhandar" never breaks mid-word: 200% text at
+   320px, or the four-column cell at 1200px. At 100% text the cap never binds. */
+.hero { container-type: inline-size; }
 .hero__name {
-  font: 600 3rem/3.5rem var(--display); /* 48/56 below 768 */
+  font: 600 min(3rem, 24cqi) / 1.1667 var(--display); /* 48/56 below 768 */
   letter-spacing: -0.02em;
 }
 .hero__tag {
@@ -235,20 +252,24 @@ p, li { text-wrap: pretty; }
 }
 @media (min-width: 768px) {
   .band { padding-top: 2.5rem; }
-  .hero__name { font-size: 4rem; line-height: 4rem; }
+  .hero__name { font-size: min(4rem, 24cqi); line-height: 1; } /* 64/64 */
 }
 
 /* ------------------------------------------------------------------ entry text */
 .entry { scroll-margin-top: 1.5rem; }
+/* Titles are capped by their own column too ("GyroBlaster" at 200% text on a phone stays whole). */
+.entry__head { container-type: inline-size; }
 .entry__title {
-  font: 600 2.5rem/3rem var(--display); /* 40/48 */
+  font: 600 min(2.5rem, 17cqi) / 1.2 var(--display); /* 40/48 */
   letter-spacing: -0.01em;
   text-decoration: underline 2px transparent;
   text-underline-offset: 6px;
 }
 @media (max-width: 767.98px) {
-  .entry__title { font-size: 2rem; line-height: 2.5rem; } /* 32/40, so the 48/56 name outranks it */
+  .entry__title { font-size: min(2rem, 17cqi); line-height: 1.25; } /* 32/40, so the 48/56 name outranks it */
 }
+/* The claim: the first note's title, verbatim, directly under the title so it is in the first glance. */
+.claim { margin-top: 0.5rem; max-width: var(--measure); font-weight: 600; }
 @keyframes land { from { text-decoration-color: var(--rose); } to { text-decoration-color: transparent; } }
 .js .entry.is-landing .entry__title,
 html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; }
@@ -277,7 +298,8 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
   gap: 1rem 1.5rem;
   margin-top: 1.5rem;
 }
-.summary { margin-top: 1.5rem; max-width: var(--measure); }
+.entry__body { margin-top: 2rem; } /* after the proof; 24px where it continues straight under the head */
+.summary { max-width: var(--measure); }
 .notes { display: grid; gap: 1.5rem; margin-top: 1.5rem; max-width: var(--measure); }
 .note { display: grid; gap: 0.5rem; }
 .evkey {
@@ -298,12 +320,12 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
 }
 
 @container page (width < 18rem) {
-  .key--primary { height: auto; min-height: 3rem; padding-block: 0.5rem; white-space: normal; text-align: center; }
+  .key--primary { white-space: normal; text-align: center; }
 }
 @media (max-width: 767.98px) {
   .keys .key--primary { width: 100%; justify-content: center; }
-  .band .entry__text { margin-top: 2rem; }
 }
+.entry__head + :is(.clip, .phone, .spread) { margin-top: 2rem; }
 
 /* ------------------------------------------------------------------ fields (ink, cut into the face) */
 .field {
@@ -540,31 +562,83 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
   .track, .transport--cues .track { margin-inline: 0.75rem; }
 }
 
+/* Caption: what is on screen in plain words (on-field), then provenance (on-field-2) in a hairline list.
+   Its text starts at the transport key's 10px inset; on full-bleed fields, at the page margin. */
+.cap {
+  width: 100%;
+  padding: 0 0.625rem 0.75rem;
+  font: 500 0.875rem/1.25rem var(--sans);
+  color: var(--on-field);
+}
+@supports (width: round(down, 100cqi, 8px)) {
+  .cap { width: var(--ww); }
+}
+html:not(.js) .cap { padding-top: 0.75rem; } /* no transport row above it without JS */
+/* The list is padded 6px and pulled back by as much, so overflow clips the separator of whichever item
+   starts a line (it hangs 9px left) while a focus ring (5px) still fits inside the box. */
+.cap__facts {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 1.0625rem;
+  margin: -0.125rem -0.375rem -0.375rem;
+  padding: 0.375rem;
+  overflow: hidden;
+  color: var(--on-field-2);
+}
+.cap__facts li { position: relative; display: flex; align-items: center; min-height: 1.5rem; }
+.cap__facts li::before {
+  content: '';
+  position: absolute;
+  left: -0.5625rem;
+  top: calc(50% - 0.375rem);
+  width: 1px;
+  height: 0.75rem;
+  background: currentColor;
+}
+.cap__full {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-height: 1.5rem;
+  color: var(--on-field);
+  text-decoration: underline 1px;
+  text-underline-offset: 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cap__full:hover { text-decoration-thickness: 2px; }
+}
+
 /* ------------------------------------------------------------------ the band: name, stage, notes, index */
-.band > .entry--stage .clip { margin-top: 2rem; margin-inline: calc(-1 * var(--edge)); border-radius: 0; max-width: none; }
-/* A field that touches both viewport edges fills them: its well takes the full width (the height stays on the
-   lattice, cropping <= 1.8%), so no hairline of ink flanks the frame at widths that are not multiples of 8. */
-@media (max-width: 1199.98px) {
-  .band > .entry--stage .clip { --ww: min(100cqi, var(--well-max)); --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px); }
+/* DOM and reading order at every width: name, Sidequest head (title, claim, keys), stage, body, index.
+   The well always fills its field (no ink sliver): its width is the field's, its height 16:9 on the lattice
+   (cropping <= 1.8%). Below 1024 the stage touches both viewport edges; from 1024 it keeps the gutters. */
+.band > .entry--stage .entry__head { margin-top: 2rem; }
+.band > .entry--stage .clip {
+  max-width: none;
+  --ww: min(100cqi, var(--well-max));
+  --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
+}
+@container page (width < 64rem) {
+  .band > .entry--stage .clip { margin-inline: calc(-1 * var(--edge)); border-radius: 0; }
+  .band > .entry--stage .cap { padding-inline: var(--margin); }
 }
 @media (min-width: 768px) {
-  .band > .entry--stage .entry__text { margin-top: 2rem; }
+  .band > .entry--stage .entry__head { margin-top: 3rem; }
 }
-.index { margin-top: 3rem; scroll-margin-top: 1.5rem; }
+.index { container: index / inline-size; margin-top: 3rem; scroll-margin-top: 1.5rem; }
 
-@media (min-width: 1200px) {
+/* From 1024 the article spans the band on a subgrid, so its head, stage and body land in band cells.
+   Positioning lifts the hero above the article's (empty) box, so the name stays selectable (no z-index:
+   tooltips keep the only one). The band's breakpoints are page widths in rem (64rem is 1024px, 75rem is
+   1200px at the default text size), so with 200% text the band stays stacked instead of squeezing a rail. */
+@container page (width >= 64rem) {
   .band {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    grid-template-rows: auto auto 1fr;
     column-gap: var(--gutter);
+    align-items: start;
   }
-  /* The article spans the whole band on a subgrid; positioning lifts the hero above its (empty) box, so the
-     name and tagline stay selectable (no z-index: tooltips keep the only one). The hero may use the gutter
-     beside it: from 1200 to 1210px the four-column cell is 357px and the 64px name is 360.5px, so it would
-     otherwise wrap onto two lines. */
-  .hero { grid-column: 1 / 5; grid-row: 1; position: relative; margin-right: calc(-1 * var(--gutter)); }
-  /* The article spans the band on a subgrid, so its figure and text land in their own cells. */
+  .hero { position: relative; }
   .band > .entry--stage {
     grid-column: 1 / -1;
     grid-row: 1 / -1;
@@ -573,22 +647,35 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
     grid-template-rows: subgrid;
     align-items: start;
   }
-  .band > .entry--stage .clip {
-    grid-column: 5 / -1;
-    grid-row: 1 / 3;
-    margin: 0 calc(-1 * var(--edge)) 0 0;
-    border-radius: var(--r) 0 0 var(--r);
-    justify-items: start;
-  }
-  .band > .entry--stage .entry__text { grid-column: 1 / 5; grid-row: 2 / 4; margin-top: 3rem; }
-  .index { grid-column: 5 / -1; grid-row: 3; }
+}
+/* 1024-1199: the name across the top, then a text rail (title, claim, keys) beside the stage, so all of it
+   is above a 1024x768 fold; the body and the index share the next row. */
+@container page (64rem <= width < 75rem) {
+  .band { grid-template-rows: auto auto auto; }
+  .hero { grid-column: 1 / -1; grid-row: 1; }
+  .band > .entry--stage .entry__head { grid-column: 1 / 5; grid-row: 2; }
+  .band > .entry--stage .clip { grid-column: 5 / -1; grid-row: 2; margin-top: 3rem; }
+  .band > .entry--stage .entry__body { grid-column: 1 / 8; grid-row: 3; margin-top: 3rem; }
+  .index { grid-column: 8 / -1; grid-row: 3; }
+}
+/* >= 1200: name, head and body down the left four columns; the stage from the top of the right eight, the
+   index under it. Row 3 has no item of its own, so it takes whatever height the stage needs past the head;
+   the body crosses into the flexible row 4, so it never stretches the rows the stage sets. The hero may use
+   the gutter beside it: from 1200 to 1210px the cell is 357px and the 64px name is 360.5px. */
+@container page (width >= 75rem) {
+  .band { grid-template-rows: auto auto auto 1fr; }
+  .hero { grid-column: 1 / 5; grid-row: 1; margin-right: calc(-1 * var(--gutter)); }
+  .band > .entry--stage .entry__head { grid-column: 1 / 5; grid-row: 2; }
+  .band > .entry--stage .clip { grid-column: 5 / -1; grid-row: 1 / 4; margin-top: 0; }
+  .band > .entry--stage .entry__body { grid-column: 1 / 5; grid-row: 3 / 5; margin-top: 1.5rem; }
+  .index { grid-column: 5 / -1; grid-row: 4; }
 }
 
 /* Index: an inventory of the projects' own proof. */
 .index__list { display: grid; }
 .row {
   display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr) 1.25rem;
+  grid-template-columns: 6rem minmax(0, 1fr);
   align-items: center;
   column-gap: 1rem;
   min-height: 4.5rem; /* 72 */
@@ -633,14 +720,14 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 }
 .row__award { font: 600 0.875rem/1.25rem var(--sans); text-wrap: balance; }
 .row__kind { display: none; color: var(--ink-2); }
-.row__go { color: var(--ink-2); }
 @media (min-width: 768px) {
-  .row { grid-template-columns: 6rem minmax(0, 1fr) 1.25rem 1.25rem; }
+  .row { grid-template-columns: 6rem minmax(0, 1fr) 1.25rem; }
   .row__kind { display: block; }
   .row__kind--award { color: var(--rose); }
 }
-@container page (width < 18rem) {
-  .row { grid-template-columns: minmax(0, 1fr) 1.25rem; }
+/* A narrow index (200% text on a phone) drops the thumbnail cell and keeps every word. */
+@container index (width < 20rem) {
+  .row { grid-template-columns: minmax(0, 1fr) auto; }
   .row__cell { display: none; }
 }
 @media (hover: hover) and (pointer: fine) {
@@ -650,7 +737,6 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 
 /* ------------------------------------------------------------------ entries after the band */
 .band + .entry, .entry + .entry, .entry + .pair { margin-top: var(--entry-gap); }
-.entry--phone .phone, .entry--spread .spread { margin-top: 2rem; }
 
 /* Phone: the screenshot is the field. */
 .phone { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 2rem; }
@@ -696,15 +782,19 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 @media (min-width: 768px) {
   .phone { justify-content: flex-start; }
 }
+/* >= 1200: head and body down the left six columns, the phone beside them. The phone crosses the flexible
+   row 2, so it only ever lengthens that row: the body always starts right under the head. */
 @media (min-width: 1200px) {
   .entry--phone {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto 1fr;
     column-gap: var(--gutter);
     align-items: start;
   }
-  .entry--phone .entry__text { grid-column: 1 / 7; }
-  .entry--phone .phone { grid-column: 7 / -1; margin-top: 0; }
+  .entry--phone .entry__head { grid-column: 1 / 7; grid-row: 1; }
+  .entry--phone .phone { grid-column: 7 / -1; grid-row: 1 / 3; margin-top: 0; }
+  .entry--phone .entry__body { grid-column: 1 / 7; grid-row: 2; margin-top: 1.5rem; }
 }
 
 /* Spread: screens as an inventory row with outlined regions, then the regions as legible crops. */
@@ -750,11 +840,19 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
      at about 0.9x, so the analyzer text stays >= 14 CSS px. */
   .spread__crops { grid-template-columns: 1.6122fr 1.0455fr; align-items: start; }
   .crop--allocation, .crop--volunteer { max-width: none; width: 100%; }
-  .entry--spread .entry__text { max-width: calc(7 / 12 * 100%); }
+  /* Head and body across seven columns, the 1120 field under them. The spread holds no focus stop, so
+     drawing it after the body changes no focus order. */
+  .entry--spread {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: var(--gutter);
+  }
+  .entry--spread .entry__head { grid-column: 1 / 8; grid-row: 1; }
+  .entry--spread .entry__body { grid-column: 1 / 8; grid-row: 2; margin-top: 1.5rem; }
+  .entry--spread .spread { grid-column: 1 / -1; grid-row: 3; }
 }
 
-/* Pair: Sunrise (7 columns) and GyroBlaster (5), field above text. */
-.entry--pair .clip + .entry__text { margin-top: 2rem; }
+/* Pair: Sunrise (7 columns) and GyroBlaster (5), each head, field, body like every other entry. */
 @supports (width: round(down, 100%, 8px)) {
   @media (min-width: 768px) {
     .entry--pair .clip { width: round(down, 100%, 8px); }
@@ -768,12 +866,20 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
     --ww: min(100cqi, var(--well-max));
     --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
   }
+  .entry--pair .cap { padding-inline: var(--margin); }
 }
+/* >= 1200: side by side on shared rows (subgrid), so both fields start on one line whatever each head holds. */
 @media (min-width: 1200px) {
   .pair {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: auto auto auto;
     column-gap: var(--gutter);
+  }
+  .pair > .entry {
+    grid-row: 1 / -1;
+    display: grid;
+    grid-template-rows: subgrid;
     align-items: start;
   }
   .pair > .entry:first-child { grid-column: 1 / 8; }
@@ -802,9 +908,11 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 }
 
 /* ------------------------------------------------------------------ close and footer */
-.close { margin-top: var(--entry-gap); }
+/* The address breaks only after "@"; "andrew.cmu.edu" never breaks. The size is capped by the column
+   (12.5cqi: the 7.75em host stays within 97% of it), so with 200% text it shrinks instead of overflowing. */
+.close { margin-top: var(--entry-gap); container-type: inline-size; }
 .close__mail {
-  font: 600 2.5rem/3rem var(--display); /* 40/48 */
+  font: 600 min(2.5rem, 12.5cqi) / 1.2 var(--display); /* 40/48 */
   letter-spacing: -0.02em;
   overflow-wrap: normal;
 }
@@ -819,16 +927,11 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 .close__row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: 2rem; }
 .close__where { color: var(--ink-2); }
 .close__host { white-space: nowrap; }
-@container page (width < 18rem) {
-  /* 200% text: the host may also break after "andrew." (a generated opportunity; copying stays clean) */
-  .close__host { white-space: normal; }
-  .close__dom::after { content: '\200B'; }
-}
 @media (min-width: 768px) {
-  .close__mail { font-size: 4rem; line-height: 4rem; }
+  .close__mail { font-size: min(4rem, 12.5cqi); line-height: 1; } /* 64/64 */
 }
 @media (max-width: 359.98px) {
-  .close__mail { font-size: 1.5rem; line-height: 2rem; }
+  .close__mail { font-size: min(1.5rem, 12.5cqi); line-height: 1.3333; } /* 24/32 */
 }
 
 .foot {
@@ -857,7 +960,7 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 
 /* ------------------------------------------------------------------ reduced motion: keep colour, drop scale */
 @media (prefers-reduced-motion: reduce) {
-  :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback):active { transform: none; }
+  :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full):active { transform: none; }
   .tip { scale: 1; transition-property: opacity; }
 }
 
@@ -865,10 +968,10 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 @media print {
   :root { --ground: #fff; }
   .field { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  .well__video, .tkey, .cue, .tip, .lane, .keys .icon, .copy, .nav__right, .foot__top, .row__go { display: none !important; }
+  .well__video, .tkey, .cue, .tip, .lane, .keys .icon, .copy, .nav__right, .foot__top, .cap__full .icon { display: none !important; }
   .well__still { display: block !important; visibility: visible !important; }
   html:not(.js) .transport, .transport { visibility: visible; height: auto; min-height: 0; }
-  .tc, .state { color: var(--ink); }
+  .tc, .state, .cap, .cap__facts, .cap__full { color: var(--ink); }
   .keys a[href^='http']::after, .qr::after { content: ' (' attr(href) ')'; font-weight: 400; }
   .band > .entry--stage .clip, .entry--pair .clip, .spread { margin-inline: 0; }
   .entry, .close { break-inside: avoid-page; }

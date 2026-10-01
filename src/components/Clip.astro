@@ -1,5 +1,6 @@
 ---
-// An ink field holding one clip: the well (pinned still over the video) and its fixed-cell transport.
+// An ink field holding one clip: the well (pinned still over the video), its fixed-cell transport, and a
+// caption (the verbatim media label, plus file provenance where there is any).
 // Without JS the video keeps native controls and the transport stays out of sight (but its cue anchors
 // keep their boxes, so /#sidequest-4.5 still lands on the field). JS removes the controls and drives it.
 import Icon from './Icon.astro';
@@ -12,6 +13,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const label = p.media.label;
 const fallback = p.links[0];
 const cuesId = `${p.slug}-cues`;
+const provenance = clip.provenance;
 ---
 
 <figure
@@ -97,4 +99,21 @@ const cuesId = `${p.slug}-cues`;
       <button class="cue cue--next" type="button" aria-label="Next cue" data-cue="1"><Icon name="player-skip-forward" size={20} /></button>
     )}
   </div>
+
+  {/* What is on screen, in plain words (media.label, verbatim), then where the footage comes from. */}
+  <figcaption class="cap">
+    <p class="cap__label">{label}</p>
+    {provenance && (
+      <ul class="cap__facts">
+        {provenance.facts.map((f) => <li>{f}</li>)}
+        {provenance.full && (
+          <li>
+            <a class="cap__full" href={`${base}/${provenance.full.src}`} type="video/mp4" target="_blank" rel="noopener">
+              {provenance.full.label}<Icon name="arrow-up-right" size={16} /><span class="sr"> (opens in a new tab)</span>
+            </a>
+          </li>
+        )}
+      </ul>
+    )}
+  </figcaption>
 </figure>

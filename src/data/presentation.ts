@@ -1,7 +1,8 @@
 // Presentation for each project, keyed by slug. Copy lives in projects.ts, which stays byte-identical to
 // main; this file only adds layout family, measured media addresses, thumbnails and evidence keys.
 //
-// Strings introduced here (evidence-key labels and cue captions) are new copy, flagged for Sai's review.
+// Strings introduced here (evidence-key labels, cue captions and the clip provenance line) are new copy,
+// flagged for Sai's review.
 
 export type Family = 'stage' | 'phone' | 'spread' | 'pair';
 
@@ -20,6 +21,9 @@ export type Clip = {
   autoplay?: boolean;
   /** Previous/next cue keys: only where there is more than one cue. */
   cueKeys?: boolean;
+  /** The caption's second line: file facts only (measured with ffprobe), and the uncut file on demand
+   *  (linked, never autoplayed or preloaded). The first line is always media.label, verbatim. */
+  provenance?: { facts: string[]; full?: { src: string; label: string } };
 };
 
 /** An evidence key after a note: where on the page its proof is. `target` is an element id. */
@@ -61,6 +65,11 @@ export const presentation: Record<string, Presentation> = {
         { t: 9.4, caption: audit('car') },
         { t: 11.2, caption: audit('pole') },
       ],
+      // The loop is frames 0-359 (12.0 s) of the 750-frame, 25.0 s capture; the capture is 3,747,147 B.
+      provenance: {
+        facts: ['12 s loop of the 25 s capture'],
+        full: { src: 'media/sidequest.mp4', label: 'Full capture, 3.7 MB' },
+      },
     },
     proofs: {
       'Footage becomes the level': { label: 'Show 0:04.5 in clip', target: 'sidequest-4.5', icon: 'clock-play' },
