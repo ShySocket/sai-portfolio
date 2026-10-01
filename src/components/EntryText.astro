@@ -2,7 +2,8 @@
 // One glance order for every family, in two boxes so the proof can sit between them in the DOM:
 //   head: title, award, claim, tags, keys      body: summary, notes (with evidence keys)
 // Project.astro renders head, media, body: that is the reading and focus order at every width. Where the
-// media sits beside the text (wide grids), the body continues under the head in the same column.
+// media sits beside the text (wide grids), the body continues under the head in the same column. Whatever the body
+// is given (Sidequest's flow) follows the notes inside it, so it stays under them in every layout.
 // The claim is the first note's title, verbatim (it stays in its note too).
 import Icon from './Icon.astro';
 import Keys from './Keys.astro';
@@ -46,5 +47,6 @@ const claim = p.bullets?.[0]?.title;
         })}
       </ul>
     )}
+    <slot />
   </div>
 )}

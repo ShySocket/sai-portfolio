@@ -3,7 +3,7 @@
 // The layout family follows the media's shape: a wide stage (Sidequest), a portrait phone with its QR
 // handoff (Lazer Shooter), a screen spread (ReliefIQ), or one half of a pair (Sunrise, GyroBlaster).
 // The proof always sits directly after the claim it backs. Where the first note names a chain (Sidequest's
-// pipeline), it is drawn after the notes.
+// pipeline), it is drawn inside the body, directly after the notes and before anything that follows the entry.
 import Clip from './Clip.astro';
 import EntryText from './EntryText.astro';
 import Flow from './Flow.astro';
@@ -23,6 +23,7 @@ const family = pres.family;
   {(family === 'stage' || family === 'pair') && pres.clip && <Clip project={p} clip={pres.clip} lcp={family === 'stage'} />}
   {family === 'phone' && <Phone project={p} />}
   {family === 'spread' && <Spread project={p} />}
-  <EntryText project={p} pres={pres} part="body" />
-  {pres.flow && <Flow steps={pres.flow} labelledby={`${p.slug}-claim`} />}
+  <EntryText project={p} pres={pres} part="body">
+    {pres.flow && <Flow steps={pres.flow} labelledby={`${p.slug}-claim`} />}
+  </EntryText>
 </article>

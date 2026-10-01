@@ -360,10 +360,11 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) var(--
 }
 .entry__head + :is(.clip, .phone, .spread) { margin-top: 2rem; }
 
-/* Flow: the first note's chain as an ordered list under the notes. Ink chips are what plays (footage in, level
-   out); the steps between are text on the face, every node 40px tall so the arrows meet them at mid-height.
-   Parallel parts hang from their step on a 1px hairline. Vertical by default; horizontal once the list has
-   52rem of its own (the band at 1024 and up), so 200% text and narrow columns keep the vertical form. */
+/* Flow: the first note's chain as an ordered list, inside the body directly under the notes (so it follows them and
+   precedes the index at every width). Ink chips are what plays (footage in, level out); the steps between are text
+   on the face, every node 40px tall so the arrows meet them at mid-height. Parallel parts hang from their step on a
+   1px hairline. Vertical by default, its arrow shafts on the text edge; horizontal once the list has 52rem of its own
+   (a full-width body from about 896px), so the text rail, 200% text and narrow columns keep the vertical form. */
 .flow { container: flow / inline-size; margin-top: 2.5rem; }
 .flow__list { display: grid; justify-items: start; }
 .flow__step { display: grid; justify-items: start; }
@@ -384,11 +385,16 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) var(--
   font: 500 0.875rem/1.25rem var(--sans);
   color: var(--ink-2);
 }
+/* Horizontal: every arrow sits 12px from the visible edge on both sides (a chip's edge, or a text node's first and
+   last letter), and the parts hang below their step inside its width (contain: they no longer widen the step and
+   push the next arrow away), wrapping where they must. */
 @container flow (width >= 52rem) {
   .flow__list { grid-auto-flow: column; justify-content: start; align-items: start; }
   .flow__step { grid-template-columns: auto auto; align-items: start; }
-  .flow__arrow { grid-row: 1; margin: 0.625rem 0.5rem 0; rotate: -90deg; }
+  .flow__arrow { grid-row: 1; margin: 0.625rem 0.75rem 0; rotate: -90deg; }
   .flow__node, .flow__parts { grid-column: 2; }
+  .flow__node:not(.field) { padding-inline: 0; }
+  .flow__parts { justify-self: stretch; contain: inline-size; gap: 0.5rem; margin-left: 0; text-wrap: balance; }
 }
 
 /* ------------------------------------------------------------------ fields (ink, cut into the face) */
@@ -697,9 +703,8 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 .cap__full:active, .fallback:active { text-decoration-thickness: 2px; }
 
 /* ------------------------------------------------------------------ the band: name, stage, notes, index */
-/* DOM and reading order at every width: name, Sidequest head (title, claim, keys), stage, body, flow, index.
-   From 1024 the flow takes the band's full width in its last row, under the notes and the index: it holds no
-   focus stop, so drawing it after the index changes no focus order.
+/* DOM and reading order at every width: name, Sidequest head (title, claim, keys), stage, body (summary, notes, then
+   the flow), index. The body is one box, so the flow always sits directly under the notes, in the body's column.
    The well always fills its field (no ink sliver): its width is the field's, its height 16:9 on the lattice
    (cropping <= 1.8%). Below 1024 the stage touches both viewport edges; from 1024 it keeps the gutters. */
 .band > .entry--stage .entry__head { margin-top: 2rem; }
@@ -739,28 +744,26 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   }
 }
 /* 1024-1199: the name across the top, then a text rail (title, claim, keys) beside the stage, so all of it
-   is above a 1024x768 fold; the body and the index share the next row. */
+   is above a 1024x768 fold; the body (with the flow) and the index share the next row. */
 @container page (64rem <= width < 75rem) {
-  .band { grid-template-rows: auto auto auto auto; }
+  .band { grid-template-rows: auto auto auto; }
   .hero { grid-column: 1 / -1; grid-row: 1; }
   .band > .entry--stage .entry__head { grid-column: 1 / 5; grid-row: 2; }
   .band > .entry--stage .clip { grid-column: 5 / -1; grid-row: 2; margin-top: 3rem; }
   .band > .entry--stage .entry__body { grid-column: 1 / 8; grid-row: 3; margin-top: 3rem; }
   .index { grid-column: 8 / -1; grid-row: 3; }
-  .band > .entry--stage .flow { grid-column: 1 / -1; grid-row: 4; margin-top: 3rem; }
 }
-/* >= 1200: name, head and body down the left four columns; the stage from the top of the right eight, the
-   index under it. Row 3 has no item of its own, so it takes whatever height the stage needs past the head;
-   the body crosses into the flexible row 4, so it never stretches the rows the stage sets. The hero may use
+/* >= 1200: name, head and body (with the flow) down the left four columns; the stage from the top of the right
+   eight, the index under it. Row 3 has no item of its own, so it takes whatever height the stage needs past the
+   head; the body crosses into the flexible row 4, so it never stretches the rows the stage sets. The hero may use
    the gutter beside it: from 1200 to 1210px the cell is 357px and the 64px name is 360.5px. */
 @container page (width >= 75rem) {
-  .band { grid-template-rows: auto auto auto 1fr auto; }
+  .band { grid-template-rows: auto auto auto 1fr; }
   .hero { grid-column: 1 / 5; grid-row: 1; margin-right: calc(-1 * var(--gutter)); }
   .band > .entry--stage .entry__head { grid-column: 1 / 5; grid-row: 2; }
   .band > .entry--stage .clip { grid-column: 5 / -1; grid-row: 1 / 4; margin-top: 0; }
   .band > .entry--stage .entry__body { grid-column: 1 / 5; grid-row: 3 / 5; margin-top: 1.5rem; }
   .index { grid-column: 5 / -1; grid-row: 4; }
-  .band > .entry--stage .flow { grid-column: 1 / -1; grid-row: 5; margin-top: 3rem; }
 }
 
 /* Index: an inventory of the projects' own proof. */
