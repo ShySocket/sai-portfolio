@@ -1062,7 +1062,7 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 
 /* ------------------------------------------------------------------ print: stills, timecodes, outlines */
 @media print {
-  :root { --ground: #fff; }
+  :root { --ground: #fff; --entry-gap: 3rem; } /* paper: entries closer, so pages fill */
   .field { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   .well__video, .tkey, .cue, .tip, .lane, .keys .icon, .copy, .nav__right, .foot__top, .cap__full .icon { display: none !important; }
   .well__still { display: block !important; visibility: visible !important; }
@@ -1072,8 +1072,19 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   /* Browsers drop backgrounds in print, so the rose fill would leave white text on paper: every lead key prints
      as the outlined key, ink on white. */
   .key--lead { background: none; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  /* A note or the flow split across pages draws the evidence key over the note's last line (grid fragmentation). */
-  .note, .flow { break-inside: avoid; }
   .band > .entry--stage .clip, .entry--pair .clip, .spread { margin-inline: 0; }
-  .entry, .close { break-inside: avoid-page; }
+  /* Pages fill: an entry may break between its blocks, but its head (title to keys) is never cut and stays with
+     what follows it, and a figure, a still, a crop, an index row, a note (a split note draws its evidence key over
+     its last line) or the flow is never cut. */
+  .hero, .entry__title, .entry__head, .award, .claim { break-after: avoid; }
+  .entry__head, figure, .shot, .crop, .qr, .row, .note, .flow, .close { break-inside: avoid; }
+  p { orphans: 3; widows: 3; }
+  .foot { min-height: 0; margin-top: 1.5rem; break-before: avoid; } /* the copyright line never takes a page alone */
+  /* The page is under 768px wide, but the spread prints in its wide form (screens in a row, crops in a row
+     beneath), so it is one compact figure that travels with its head instead of five page-high images. */
+  .spread { padding: 1rem; }
+  .spread__row { display: grid; gap: 1rem; }
+  .spread__screens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .spread__crops { grid-template-columns: 1fr 1fr; align-items: start; }
+  .shot, .crop { order: 0; }
 }
