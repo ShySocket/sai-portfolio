@@ -112,8 +112,10 @@ const CLEAR = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAA
 
   {/* What is on screen, in plain words (media.label, verbatim), then where the footage comes from. The label line
       is the same text as the frame's own name (the still's alt, then the video's label), so it is hidden from
-      assistive tech and the label is announced once; the provenance line is read as usual. */}
-  <figcaption class="cap">
+      assistive tech and the label is announced once; the provenance line is read as usual. On paper the transport
+      gives way to the pinned still's own timecode (data-print), so a page printed mid-play never labels the still
+      with the live readout. */}
+  <figcaption class="cap" data-print={`${timecode(clip.t)} / ${timecode(clip.duration, false)}`}>
     <p class="cap__label" aria-hidden="true">{label}</p>
     {provenance && (
       <ul class="cap__facts">

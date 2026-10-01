@@ -38,11 +38,10 @@
   /* Motion. Every transition and animation on the page uses these tokens (inventory: polish-7c/motion-inventory.md).
      Only transform and opacity move; colour changes fade. Nothing enters on scroll and nothing is hidden at first
      paint. Seeks, cue steps, jumps and focus are instant. */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* press, tooltip, state crossfades */
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* reserved for on-screen movement; none today */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* press, tooltip, state crossfades; the page's only curve */
   --ease-colour: ease; /* hover and colour fades */
   --t-press: 140ms; /* :active scale .97 */
-  --t-hover: 150ms; /* hover fills and underline colour */
+  --t-hover: 150ms; /* hover fills, rings and underline colour, in step */
   --t-state: 150ms; /* one cell, two labels: copy key labels, transport glyphs */
   --t-tip: 125ms;
   --t-land: 600ms; /* the landing cue: a colour fade on the landed title after an instant jump, never movement */
@@ -123,18 +122,25 @@ p, li { text-wrap: pretty; }
 
 /* Every pressable answers within a frame: scale .97 while pressed (links inside running text excepted; there are
    none today). Hover fills live in (hover: hover) and (pointer: fine) blocks; the same fill also shows while pressed,
-   so touch and reduced motion still get a colour answer. */
+   so touch and reduced motion still get a colour answer. A cue tick is the one exception to the scale: .97 of its
+   24px box is a third of a pixel, and it would shrink the open tooltip inside it, so its mark turns rose instead. */
 :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a) {
   transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) var(--ease-colour),
     text-decoration-color var(--t-hover) var(--ease-colour);
   touch-action: manipulation;
 }
-:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
+/* The outlined keys' 1px ring darkens with their fill, in step (colour only: the ring never moves). Their focus
+   ring is an outline, so focus stays instant. */
+:where(.key--watch, .copy, .evkey, .qr) {
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) var(--ease-colour),
+    box-shadow var(--t-hover) var(--ease-colour);
+}
+:where(.key, .copy, .tkey, .cue, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
   transform: scale(0.97);
 }
 [aria-disabled='true']:active { transform: none; }
 @media (prefers-reduced-motion: reduce) {
-  :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
+  :where(.key, .copy, .tkey, .cue, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
     transform: none; /* the press keeps its fill or underline (below), drops the scale */
   }
 }
@@ -159,7 +165,9 @@ p, li { text-wrap: pretty; }
   align-items: center;
   min-height: 2.75rem;
   font-weight: 600;
-  text-decoration: none;
+  /* Unmarked at rest (it is the name, not a link in a line); hover and press draw the nav link's underline. */
+  text-decoration: underline 1px transparent;
+  text-underline-offset: 4px;
 }
 .nav__right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
 .nav__link {
@@ -260,12 +268,14 @@ p, li { text-wrap: pretty; }
   .key--watch:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
   .key--code:hover { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
   .nav__link:hover { text-decoration-thickness: 2px; }
+  .nav__name:hover { text-decoration-color: var(--ink); }
   .copy:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 }
 .key--play:active { background: var(--rose-press); }
 .key--watch:active, .copy:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 .key--code:active { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
 .nav__link:active { text-decoration-thickness: 2px; }
+.nav__name:active { text-decoration-color: var(--ink); }
 
 /* ------------------------------------------------------------------ hero */
 .band { padding-top: 1rem; }
@@ -477,7 +487,19 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
 .tkey { grid-area: key; }
 .cue--prev { grid-area: prev; }
 .cue--next { grid-area: next; }
-.cue[aria-disabled='true'], .tkey[aria-disabled='true'] { opacity: 0.38; cursor: default; }
+/* Disabled keys sink 62% into the ink (what opacity .38 drew) under a veil inside the key, not by fading the key
+   itself: a cue key disables under the keyboard focus at the last cue, and its focus ring (drawn outside the key)
+   must keep full strength. The veil has no transition, so enabling and disabling stay instant. */
+.tkey, .cue { position: relative; }
+.cue[aria-disabled='true'], .tkey[aria-disabled='true'] { cursor: default; }
+.cue[aria-disabled='true']::after, .tkey[aria-disabled='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--ink);
+  opacity: 0.62;
+}
 @media (hover: hover) and (pointer: fine) {
   .tkey:not([aria-disabled='true']):hover, .cue:not([aria-disabled='true']):hover { background: var(--raise-hover); }
 }
@@ -553,14 +575,15 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
   text-decoration: none;
   scroll-margin-top: calc(var(--wh) + 2.5rem);
 }
-/* The pressed mark turns rose at once: arrow keys step cues, and a keyboard step never animates. */
+/* The pressed mark turns rose at once: arrow keys step cues, and a keyboard step never animates. A pointer press
+   lights it from the moment it lands (the tick's press answer; it takes no scale, see the press list). */
 .tick__mark {
   width: 2px;
   height: 0.75rem; /* 12 */
   border-radius: 1px;
   background: var(--on-field);
 }
-.tick.is-pressed .tick__mark { background: var(--rose); }
+.tick.is-pressed .tick__mark, .tick:active .tick__mark { background: var(--rose); }
 .tick.is-mark { pointer-events: none; }
 .tip {
   position: absolute;
@@ -686,9 +709,9 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   position: absolute;
   left: -0.5625rem;
   top: calc(50% - 0.375rem);
-  width: 1px;
+  width: 0;
   height: 0.75rem;
-  background: currentColor;
+  border-left: 1px solid; /* a border, not a fill: it prints with background graphics off */
 }
 .cap__full {
   display: inline-flex;
@@ -812,9 +835,9 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   position: absolute;
   left: -0.5625rem;
   top: 0.25rem;
-  width: 1px;
+  width: 0;
   height: 0.75rem;
-  background: currentColor;
+  border-left: 1px solid;
 }
 .row__award { font: 600 0.875rem/1.25rem var(--sans); text-wrap: balance; }
 .row__kind { display: none; color: var(--ink-2); }
@@ -1035,9 +1058,9 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   position: absolute;
   left: -0.5625rem;
   top: calc(50% - 0.375rem);
-  width: 1px;
+  width: 0;
   height: 0.75rem;
-  background: currentColor;
+  border-left: 1px solid;
 }
 .close__host { white-space: nowrap; }
 @media (min-width: 768px) {
@@ -1076,20 +1099,24 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 @media print {
   :root { --ground: #fff; --entry-gap: 3rem; } /* paper: entries closer, so pages fill */
   .field { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  .well__video, .tkey, .cue, .tip, .lane, .keys .icon, .copy, .nav__right, .foot__top, .cap__full .icon { display: none !important; }
+  /* The paper shows the still, so it carries the still's own timecode, set in the caption's column: the transport
+     (its live readout, whatever was playing when the page was printed, and its state word) stays on screen. */
+  .well__video, .transport, .keys .icon, .copy, .nav__right, .foot__top, .cap__full .icon { display: none !important; }
   .well__still { display: block !important; visibility: visible !important; }
-  html:not(.js) .transport, .transport { visibility: visible; height: auto; min-height: 0; }
-  .tc, .state, .cap, .cap__facts, .cap__full { color: var(--ink); }
+  .cap { padding-top: 0.25rem; color: var(--ink); } /* the timecode line takes the transport row's place and height */
+  .cap::before { content: attr(data-print); display: block; font-weight: 600; }
+  .cap__facts, .cap__full { color: var(--ink); }
   .keys a[href^='http']::after, .qr::after { content: ' (' attr(href) ')'; font-weight: 400; }
   /* Browsers drop backgrounds in print, so the rose fill would leave white text on paper: every lead key prints
      as the outlined key, ink on white. */
   .key--lead { background: none; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   .band > .entry--stage .clip, .entry--pair .clip, .spread { margin-inline: 0; }
   /* Pages fill: an entry may break between its blocks, but its head (title to keys) is never cut and stays with
-     what follows it, and a figure, a still, a crop, an index row, a note (a split note draws its evidence key over
-     its last line) or the flow is never cut. */
+     what follows it, and the name with its line, a figure, a still, a crop, an index row, a summary, a note (a split
+     note draws its evidence key over its last line) or the flow is never cut. Summaries stay whole because Chrome
+     drops widows when a short paragraph cannot meet both limits (a 4-line summary split 3 + 1). */
   .hero, .entry__title, .entry__head, .award, .claim { break-after: avoid; }
-  .entry__head, figure, .shot, .crop, .qr, .row, .note, .flow, .close { break-inside: avoid; }
+  .hero, .entry__head, figure, .shot, .crop, .qr, .row, .summary, .note, .flow, .close { break-inside: avoid; }
   p { orphans: 3; widows: 3; }
   .foot { min-height: 0; margin-top: 1.5rem; break-before: avoid; } /* the copyright line never takes a page alone */
   /* The page is under 768px wide, but the spread prints in its wide form (screens in a row, crops in a row
