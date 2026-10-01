@@ -98,6 +98,12 @@ if (!stillsOnly) {
 // 13.7 s (frame 411): two stacked floors with moss decals, and the only stretch of the capture (frames 409-413)
 // where nothing is selected, so no transform gizmo or camera frustum is drawn over the scene. Found by counting
 // saturated red, yellow and green gizmo pixels in the crop on every frame; 411 is 2 frames after it clears.
+// Re-searched in polish 7c for a frame without the editor's mouse cursor: all 882 frames were scored (gizmo pixels
+// in the Scene crop, and an empty Inspector panel for "nothing selected"). The Inspector is empty only in frames
+// 409-421; the gizmo returns at 414; and in 409-413 the cursor crosses the facade (it moves within about x700-710,
+// y237-262 of the source), where no 16:9 crop of the Scene view large enough to show the floors can avoid it. So
+// no frame of the capture is free of editor overlay, and 411 (cursor only, small, on a plain wall) stays the still.
+// The cursor is not painted out: the still must be the frame the video shows at 0:13.7.
 const sr411 = frame(sr, 411, join(tmp, 'sr-411.png'), SCENE);
 await webp(sr411, join(STILLS, 'sunrise-13.7.webp'), { quality: 95 });
 await thumb(sr411, join(OUT, 'thumb-sunrise.webp'), { width: 192, height: 112, quality: 64 });
