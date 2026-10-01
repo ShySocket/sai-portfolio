@@ -213,7 +213,7 @@ Tiered by what the link proves, all at the title so they sit in the first glance
 - **Evidence key** (`evidence-key`): a 28px outlined chip under a note that names where its proof is ("Show 0:04.5 in clip"). It jumps to the address; hovering or focusing the note draws a 2px ring on what it governs (On Field inside fields, ink on the ground, never rose).
 
 ### Press, hover and focus
-- Every pressable scales to 0.97 while pressed (140ms, ease-out) and also shows its hover fill or underline while pressed, so touch and reduced motion still get a colour answer. Under reduced motion the scale is dropped. A cue tick takes no scale; its mark turns rose instead.
+- Every pressable scales to 0.97 while pressed (140ms, ease-out) and also shows its hover fill or underline while pressed, so touch and reduced motion still get a colour answer. Wide surfaces (index rows, the display-size closing address) press at 0.99 so their edges move about 4px, not 14px. Under reduced motion the scale is dropped. A cue tick takes no scale; its mark turns rose instead.
 - Hover fills live only under `(hover: hover) and (pointer: fine)`.
 - Focus is a 2px rose outline offset 2px. Inside fields it is a ring of ink, rose and a 1px On Field edge, so it holds on footage and never touches a raised key. Focus is always instant.
 - Disabled transport keys sink under a 62% ink veil drawn inside the key, so their focus ring keeps full strength.
@@ -252,7 +252,7 @@ Tokens in `:root`: one curve (`--ease-out`, cubic-bezier(0.23, 1, 0.32, 1)) for 
 - **Do** keep rose to its seven uses, and put every other emphasis in weight, size or an ink field.
 - **Do** show a project's proof next to the sentence it backs, and give that proof an address (a tick id or a region id) with an evidence key in the note.
 - **Do** keep transport cells fixed: a state change swaps text inside a cell and never moves the track or the ticks.
-- **Do** give every pressable both a 0.97 press scale and a colour answer while pressed, gate hover fills to fine pointers, and keep focus instant.
+- **Do** give every pressable both a press scale (0.97, or 0.99 on wide surfaces) and a colour answer while pressed, gate hover fills to fine pointers, and keep focus instant.
 - **Do** size type, spacing and wells on the 8px lattice and the five-step ramp.
 - **Do** keep everything visible at first paint and without JS: no-JS clips fall back to native controls over the pinned still.
 

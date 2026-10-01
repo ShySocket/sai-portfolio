@@ -138,6 +138,8 @@ p, li { text-wrap: pretty; }
 :where(.key, .copy, .tkey, .cue, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
   transform: scale(0.97);
 }
+/* Wide surfaces press at .99: at .97 a 923px index row or the display-size address pulls each edge in ~14px. */
+:where(.row, .close__mail a):active { transform: scale(0.99); }
 [aria-disabled='true']:active { transform: none; }
 @media (prefers-reduced-motion: reduce) {
   :where(.key, .copy, .tkey, .cue, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
