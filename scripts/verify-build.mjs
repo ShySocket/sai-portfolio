@@ -5,7 +5,8 @@
 //   node scripts/verify-build.mjs
 //
 // 1. Verbatim: every rendered string that is derived from projects.ts (claims, clip captions and still alts,
-//    index titles, kickers and awards, flow nodes, key labels, tags) is a substring of a projects.ts string.
+//    index titles, kickers and awards, flow nodes, key labels, tags, summaries, note lead-ins and bodies, screen
+//    alts) is a substring of a projects.ts string.
 //    projects.ts is the confirmed copy; presentation.ts may only pick phrases out of it, never write new ones.
 // 2. Media: dist/assets ships no PNG and no untransformed image original (only astro:assets encodes).
 // 3. Typography: no em or en dashes in rendered text (HTML text and attributes, and the strings in JS and CSS).
@@ -73,6 +74,17 @@ const html = readFileSync(join(dist, 'index.html'), 'utf8');
 const doc = parse(html);
 const byClass = (c) => all(doc, (el) => has(el, c));
 const kids = (el, tag) => (el.children ?? []).filter((c) => typeof c === 'object' && c.tag === tag);
+function notes() {
+  return byClass('note').map((li) => {
+    const p = kids(li, 'p')[0] ?? { children: [] };
+    const b = kids(p, 'b')[0] ?? { children: [] };
+    const body = (p.children ?? []).filter((c) => c !== b).map((c) => (typeof c === 'string' ? c : text(c))).join('');
+    return [text(b).replace(/\.$/, ''), squash(body)];
+  });
+}
+// The ReliefIQ screens (inside .shot) and the Lazer Shooter screen (.phone__shot): their alts are projects.ts copy.
+const shotImgs = new Set(byClass('shot').flatMap((s) => all(s, (el) => el.tag === 'img')));
+const isShot = (el) => shotImgs.has(el);
 
 // What claims to be verbatim, by the class that renders it, with the least the page must hold (so a renamed class
 // fails loudly instead of checking nothing).
@@ -87,6 +99,11 @@ const checks = [
   ['index kicker', byClass('kicker').flatMap((ul) => kids(ul, 'li').map(text)), 15],
   ['flow node', [...byClass('flow__node'), ...byClass('flow__parts').flatMap((ul) => kids(ul, 'li'))].map(text), 7],
   ['key label', byClass('keys').flatMap((k) => all(k, (el) => el.tag === 'a').map((a) => text(kids(a, 'span')[0] ?? { children: [] }))), 6],
+  ['summary', byClass('summary').map(text), 5],
+  // A note renders as <p><b>Lead-in.</b> Body</p>: the lead-in without its period, and the body after it.
+  ['note lead-in', notes().map(([lead]) => lead), 10],
+  ['note body', notes().map(([, body]) => body), 10],
+  ['screen alt', all(doc, (el) => el.tag === 'img' && (has(el, 'phone__shot') || isShot(el))).map((img) => img.attrs.alt ?? ''), 4],
 ];
 let verbatim = 0;
 for (const [what, strings, min] of checks) {
@@ -106,8 +123,10 @@ const IMAGE = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif']);
 for (const f of assets) {
   const ext = extname(f).toLowerCase();
   if (ext === '.png') fail(`media: ${relative(root, f)} is a PNG (only astro:assets encodes may ship)`);
-  // astro:assets names an encode name.HASH_OPTIONS.ext; an original keeps name.HASH.ext.
-  else if (IMAGE.has(ext) && !/_[\w-]+\.\w+$/.test(f.split('/').pop())) fail(`media: ${relative(root, f)} is an untransformed original`);
+  // astro:assets names an encode name.HASH_OPTIONS.ext and an original name.HASH.ext, where HASH is Vite's 8-char
+  // base64url hash (it may hold '_' or '-', as relief-2.D_wTC6FU does) and OPTIONS is alphanumeric. So the part
+  // between the last two dots must be the 8-char hash, then '_' and the options; anything else is an original.
+  else if (IMAGE.has(ext) && !/^[\w-]{8}_[A-Za-z0-9]+$/.test(f.split('/').pop().split('.').slice(-2, -1)[0] ?? '')) fail(`media: ${relative(root, f)} is an untransformed original`);
 }
 
 // ------------------------------------------------------------------ 3. dashes

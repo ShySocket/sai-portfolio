@@ -1,7 +1,9 @@
 // Cue behaviour: clip transports, cue addresses, copy email, landing cue. Everything here enhances markup
 // that already works and is fully visible without it (no-JS clips keep native controls).
 // Each clip and the copy key initialise in their own try/catch: a clip that fails falls back to its no-JS form
-// (native controls over the still), and nothing else on the page is affected.
+// (native controls over the still), and nothing else on the page is affected. A clip checks its markup before it
+// touches anything, and every listener and observer it sets up hangs off one AbortSignal, so a clip that fails
+// part-way is detached completely: its native controls then run with no script behind them.
 
 const d = document;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -34,15 +36,19 @@ const cueById = new Map<string, () => void>();
 
 type Player = { arm(): void; still(): void };
 
-function clip(fig: HTMLElement): Player {
-  const v = fig.querySelector('video')!;
-  const frameLabel = fig.querySelector<HTMLImageElement>('.well__still')!.alt;
-  const tr = fig.querySelector<HTMLElement>('[data-transport]')!;
-  const key = tr.querySelector<HTMLButtonElement>('[data-play]')!;
-  const word = tr.querySelector('[data-word]')!;
-  const now = tr.querySelector('[data-now]')!;
-  const fill = tr.querySelector<HTMLElement>('[data-fill]')!;
-  const lane = tr.querySelector<HTMLElement>('[data-lane]')!;
+function clip(fig: HTMLElement, signal: AbortSignal): Player {
+  const v = fig.querySelector('video');
+  const stillImg = fig.querySelector<HTMLImageElement>('.well__still');
+  const well = fig.querySelector<HTMLElement>('[data-well]');
+  const tr = fig.querySelector<HTMLElement>('[data-transport]');
+  const key = tr?.querySelector<HTMLButtonElement>('[data-play]');
+  const word = tr?.querySelector('[data-word]');
+  const now = tr?.querySelector('[data-now]');
+  const fill = tr?.querySelector<HTMLElement>('[data-fill]');
+  const lane = tr?.querySelector<HTMLElement>('[data-lane]');
+  if (!v || !stillImg || !well || !tr || !key || !word || !now || !fill || !lane) throw new Error(`${fig.dataset.title} clip markup is incomplete`);
+  const on = { signal };
+  const frameLabel = stillImg.alt;
   const ticks = [...lane.querySelectorAll<HTMLAnchorElement>('.tick')];
   const times = ticks.map((a) => Number(a.dataset.t));
   const [prev, next] = [...tr.querySelectorAll<HTMLButtonElement>('[data-cue]')];
@@ -59,6 +65,11 @@ function clip(fig: HTMLElement): Player {
   let cur = t0;
   let pressed: HTMLElement | null = null;
   let at = -1; // the cue on screen: arrow keys step from it, even when it is a mark that cannot hold focus
+  const observers: { disconnect(): void }[] = [];
+  signal.addEventListener('abort', () => {
+    observers.forEach((o) => o.disconnect());
+    ticks.forEach((a) => cueById.delete(a.id));
+  });
 
   v.removeAttribute('controls');
 
@@ -129,7 +140,7 @@ function clip(fig: HTMLElement): Player {
     if (v.readyState >= 1) go();
     else {
       load();
-      v.addEventListener('loadedmetadata', go, { once: true });
+      v.addEventListener('loadedmetadata', go, { once: true, signal });
     }
   };
   const play = () => {
@@ -180,11 +191,11 @@ function clip(fig: HTMLElement): Player {
     press(null);
     requestAnimationFrame(show);
     run();
-  });
-  v.addEventListener('waiting', () => state === 'playing' && set('loading'));
-  v.addEventListener('pause', () => state !== 'error' && set('paused'));
-  v.addEventListener('seeked', () => v.readyState >= 2 && requestAnimationFrame(show));
-  v.addEventListener('error', () => set('error'));
+  }, on);
+  v.addEventListener('waiting', () => state === 'playing' && set('loading'), on);
+  v.addEventListener('pause', () => state !== 'error' && set('paused'), on);
+  v.addEventListener('seeked', () => v.readyState >= 2 && requestAnimationFrame(show), on);
+  v.addEventListener('error', () => set('error'), on);
 
   // Controls
   key.addEventListener('click', () => {
@@ -198,19 +209,19 @@ function clip(fig: HTMLElement): Player {
       press(null);
       play();
     }
-  });
-  fig.querySelector('[data-well]')!.addEventListener('click', () => !fig.hasAttribute('data-static') && key.click());
+  }, on);
+  well.addEventListener('click', () => !fig.hasAttribute('data-static') && key.click(), on);
   for (const b of [prev, next]) {
     b?.addEventListener('click', () => {
       if (b.getAttribute('aria-disabled') === 'true') return;
       cue(nextIndex(b === prev ? -1 : 1));
-    });
+    }, on);
   }
   ticks.forEach((a, i) => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
       cue(i);
-    });
+    }, on);
     cueById.set(a.id, () => cue(i, { address: false }));
   });
   lane.addEventListener('keydown', (e) => {
@@ -221,7 +232,7 @@ function clip(fig: HTMLElement): Player {
     if (j === undefined) return;
     e.preventDefault();
     cue(Math.min(Math.max(j, 0), ticks.length - 1), { focus: true });
-  });
+  }, on);
 
   // Targets: only ticks whose centres are >= 24px apart stay focusable and pressable; the rest become marks
   // that keep their ids (cue keys and arrow keys still reach them).
@@ -238,17 +249,21 @@ function clip(fig: HTMLElement): Player {
     }
     if (!ticks.some((a) => a.tabIndex === 0)) ticks.find((a) => !a.classList.contains('is-mark'))!.tabIndex = 0;
   };
-  new ResizeObserver(guard).observe(lane);
-  tooltips(lane, ticks);
+  const ro = new ResizeObserver(guard);
+  observers.push(ro);
+  ro.observe(lane);
+  tooltips(lane, ticks, signal);
 
-  new IntersectionObserver(
+  const io = new IntersectionObserver(
     (es) => {
       visible = es[es.length - 1].intersectionRatio >= 0.2;
       sync();
     },
     { threshold: [0, 0.2] },
-  ).observe(fig);
-  d.addEventListener('visibilitychange', sync);
+  );
+  observers.push(io);
+  io.observe(fig);
+  d.addEventListener('visibilitychange', sync, on);
 
   set('ready');
   paint(t0);
@@ -279,7 +294,8 @@ function unenhance(fig: HTMLElement) {
 
 /** Tooltips (WCAG 1.4.13): 200ms hover delay, instant for 600ms after one closes, immediate on keyboard
  *  focus, hoverable (the tip is inside the link), persistent while hovered or focused, Esc dismisses. */
-function tooltips(lane: HTMLElement, ticks: HTMLElement[]) {
+function tooltips(lane: HTMLElement, ticks: HTMLElement[], signal: AbortSignal) {
+  const on = { signal };
   let timer = 0;
   let closed = 0;
   const open = (a: HTMLElement) => {
@@ -299,18 +315,18 @@ function tooltips(lane: HTMLElement, ticks: HTMLElement[]) {
       lane.toggleAttribute('data-instant', instant);
       clearTimeout(timer);
       timer = window.setTimeout(() => open(a), instant ? 0 : 200);
-    });
-    a.addEventListener('pointerleave', () => !a.matches(':focus-visible') && close(a));
+    }, on);
+    a.addEventListener('pointerleave', () => !a.matches(':focus-visible') && close(a), on);
     a.addEventListener('focus', () => {
       if (!a.matches(':focus-visible')) return;
       lane.toggleAttribute('data-instant', true);
       open(a);
-    });
-    a.addEventListener('blur', () => close(a));
+    }, on);
+    a.addEventListener('blur', () => close(a), on);
   }
   d.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') ticks.forEach(close);
-  });
+  }, on);
 }
 
 /** Copy email: the mailto link becomes a real button; labels crossfade in one grid cell (no resize). */
@@ -360,9 +376,11 @@ function route() {
 function init() {
   const ctl: Player[] = [];
   for (const fig of d.querySelectorAll<HTMLElement>('[data-clip]')) {
+    const setup = new AbortController();
     try {
-      ctl.push(clip(fig));
+      ctl.push(clip(fig, setup.signal));
     } catch (e) {
+      setup.abort(); // detach whatever the clip had wired up before it failed
       unenhance(fig);
       console.warn('Clip controls unavailable', e);
     }

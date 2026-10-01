@@ -1039,6 +1039,11 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   html:not(.js) .transport, .transport { visibility: visible; height: auto; min-height: 0; }
   .tc, .state, .cap, .cap__facts, .cap__full { color: var(--ink); }
   .keys a[href^='http']::after, .qr::after { content: ' (' attr(href) ')'; font-weight: 400; }
+  /* Browsers drop backgrounds in print, so the rose fill would leave white text on paper: every lead key prints
+     as the outlined key, ink on white. */
+  .key--lead { background: none; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  /* A note or the flow split across pages draws the evidence key over the note's last line (grid fragmentation). */
+  .note, .flow { break-inside: avoid; }
   .band > .entry--stage .clip, .entry--pair .clip, .spread { margin-inline: 0; }
   .entry, .close { break-inside: avoid-page; }
 }
