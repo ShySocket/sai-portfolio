@@ -15,19 +15,26 @@ const { project: p } = Astro.props;
 const media = p.media.type === 'images' ? p.media : null;
 
 // Crops are shown at about 1x of the screenshot (never upscaled), so one width each is enough.
+// Only the WebP derivatives ship: astro:assets copies a source into dist as soon as any of its fields is read
+// in a page (src, width, height), so sizes come from clones (`.clone` is the one read that is not tracked)
+// and the PNG crops stay build inputs.
+const dims = (src: ImageMetadata) => {
+  const { width, height } = (src as ImageMetadata & { clone?: ImageMetadata }).clone ?? src; // as getImage does
+  return { width, height };
+};
 const wide = async (src: ImageMetadata) => getImage({ src, format: 'webp', quality: 84 });
-const narrow = async (src: ImageMetadata) => getImage({ src, format: 'webp', quality: 84, widths: [352, src.width] });
+const narrow = async (src: ImageMetadata) => getImage({ src, format: 'webp', quality: 84, widths: [352, dims(src).width] });
 const crops = {
   allocation: {
     wide: await wide(sarlahi),
     narrow: await narrow(sarlahiNarrow),
-    src: sarlahi,
+    size: dims(sarlahi),
     alt: 'Top 5 Best Fit Regions for CARE Nepal. Sarlahi: Match Score 73.7, Urgency 56.5, Fitness 68.1, Damage 89.0%, Population Density 675.3',
   },
   volunteer: {
     wide: await wide(road),
     narrow: await narrow(roadNarrow),
-    src: road,
+    size: dims(road),
     alt: 'Image Analyzer: a fallen tree across a road; Features Identified: Blocked road by fallen tree, Dense forest surrounding the road',
   },
 };
@@ -56,7 +63,7 @@ const screen = (i: number) => media!.images[i];
         return (
           <picture class={`crop crop--${k}`} data-ring={`reliefiq-${k}`}>
             <source media="(max-width: 767.98px)" srcset={c.narrow.srcSet.attribute} sizes="352px" type="image/webp" />
-            <img src={c.wide.src} alt={c.alt} width={c.src.width} height={c.src.height} loading="lazy" decoding="async" />
+            <img src={c.wide.src} alt={c.alt} width={c.size.width} height={c.size.height} loading="lazy" decoding="async" />
           </picture>
         );
       })}
