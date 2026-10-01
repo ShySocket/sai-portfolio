@@ -35,14 +35,17 @@
   --ww: min(round(down, 100cqi, 8px), var(--well-max));
   --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
 
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  /* Motion. Every transition and animation on the page uses these tokens (inventory: polish-7c/motion-inventory.md).
+     Only transform and opacity move; colour changes fade. Nothing enters on scroll and nothing is hidden at first
+     paint. Seeks, cue steps, jumps and focus are instant. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* press, tooltip, state crossfades */
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* reserved for on-screen movement; none today */
-  --t-press: 140ms;
-  --t-hover: 150ms;
-  --t-glyph: 150ms; /* the transport key's play, pause and loading glyphs crossfade in one cell */
-  --t-state: 180ms;
+  --ease-colour: ease; /* hover and colour fades */
+  --t-press: 140ms; /* :active scale .97 */
+  --t-hover: 150ms; /* hover fills and underline colour */
+  --t-state: 150ms; /* one cell, two labels: copy key labels, transport glyphs */
   --t-tip: 125ms;
-  --t-land: 600ms;
+  --t-land: 600ms; /* the landing cue: a colour fade on the landed title after an instant jump, never movement */
   --t-spin: 700ms; /* one turn of the loading glyph, linear, only while loading */
 
   --display: 'Funnel Display', 'Funnel Display Fallback', Arial, sans-serif;
@@ -118,16 +121,23 @@ p, li { text-wrap: pretty; }
   box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--rose), 0 0 0 5px var(--on-field);
 }
 
-/* Every pressable answers within a frame. */
-:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full) {
-  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) ease,
-    text-decoration-color var(--t-hover) ease;
+/* Every pressable answers within a frame: scale .97 while pressed (links inside running text excepted; there are
+   none today). Hover fills live in (hover: hover) and (pointer: fine) blocks; the same fill also shows while pressed,
+   so touch and reduced motion still get a colour answer. */
+:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a) {
+  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) var(--ease-colour),
+    text-decoration-color var(--t-hover) var(--ease-colour);
   touch-action: manipulation;
 }
-:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full):active {
+:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
   transform: scale(0.97);
 }
 [aria-disabled='true']:active { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
+    transform: none; /* the press keeps its fill or underline (below), drops the scale */
+  }
+}
 
 /* ------------------------------------------------------------------ frame */
 .wrap {
@@ -217,6 +227,7 @@ p, li { text-wrap: pretty; }
 }
 .copy--lg { height: 3rem; padding: 0 1.125rem; font: 500 1.0625rem/1.75rem var(--sans); }
 .copy__stack { display: grid; }
+/* The labels crossfade (opacity only, so reduced motion keeps it); the hidden one leaves the a11y tree once faded. */
 .copy__l {
   grid-area: 1 / 1;
   display: inline-flex;
@@ -224,7 +235,7 @@ p, li { text-wrap: pretty; }
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  transition: opacity var(--t-state) ease, visibility var(--t-state);
+  transition: opacity var(--t-state) var(--ease-out), visibility var(--t-state);
 }
 .copy__nojs, .copy__js { display: inline-flex; align-items: center; gap: 0.5rem; }
 .copy__l--done, .copy__l--fail { opacity: 0; visibility: hidden; }
@@ -251,6 +262,10 @@ p, li { text-wrap: pretty; }
   .nav__link:hover { text-decoration-thickness: 2px; }
   .copy:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 }
+.key--play:active { background: var(--rose-press); }
+.key--watch:active, .copy:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
+.key--code:active { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
+.nav__link:active { text-decoration-thickness: 2px; }
 
 /* ------------------------------------------------------------------ hero */
 .band { padding-top: 1rem; }
@@ -285,9 +300,11 @@ p, li { text-wrap: pretty; }
 }
 /* The claim: the first note's title, verbatim, directly under the title so it is in the first glance. */
 .claim { margin-top: 0.5rem; max-width: var(--measure); font-weight: 600; }
+/* Landing cue: after an instant jump to a project, its title's underline fades from rose. A one-shot colour fade (a
+   keyframe, restarted by motion.ts on a repeat jump; nothing to reverse), so reduced motion keeps it. */
 @keyframes land { from { text-decoration-color: var(--rose); } to { text-decoration-color: transparent; } }
 .js .entry.is-landing .entry__title,
-html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; }
+html:not(.js) .entry:target .entry__title { animation: land var(--t-land) var(--ease-colour); }
 
 .award {
   display: flex;
@@ -333,6 +350,7 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
 @media (hover: hover) and (pointer: fine) {
   .evkey:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 }
+.evkey:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 
 @container page (width < 18rem) {
   .key--lead { white-space: normal; text-align: center; }
@@ -457,18 +475,23 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
 @media (hover: hover) and (pointer: fine) {
   .tkey:not([aria-disabled='true']):hover, .cue:not([aria-disabled='true']):hover { background: var(--raise-hover); }
 }
-/* Play, pause and loading share the key's one cell and crossfade, so the key never resizes or jumps. The
-   loading glyph turns only while it is shown. */
+.tkey:not([aria-disabled='true']):active, .cue:not([aria-disabled='true']):active { background: var(--raise-hover); }
+/* Play, pause and loading share the key's one cell and crossfade (a transition, so a quick second press reverses it
+   from where it is), so the key never resizes or jumps. Reduced motion keeps the crossfade: it is opacity only.
+   The loading glyph turns only while it is shown, and holds still under reduced motion. */
 .tkey__i {
   grid-area: 1 / 1;
   opacity: 0;
-  transition: opacity var(--t-glyph) var(--ease-out);
+  transition: opacity var(--t-state) var(--ease-out);
 }
 :is([data-state='ready'], [data-state='paused'], [data-state='error']) .tkey__i--play,
 [data-state='playing'] .tkey__i--pause,
 [data-state='loading'] .tkey__i--load { opacity: 1; }
 [data-state='loading'] .tkey__i--load { animation: spin var(--t-spin) linear infinite; }
 @keyframes spin { to { rotate: 1turn; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-state='loading'] .tkey__i--load { animation: none; }
+}
 
 .tc {
   grid-area: tc;
@@ -524,12 +547,12 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
   text-decoration: none;
   scroll-margin-top: calc(var(--wh) + 2.5rem);
 }
+/* The pressed mark turns rose at once: arrow keys step cues, and a keyboard step never animates. */
 .tick__mark {
   width: 2px;
   height: 0.75rem; /* 12 */
   border-radius: 1px;
   background: var(--on-field);
-  transition: background-color var(--t-hover) ease;
 }
 .tick.is-pressed .tick__mark { background: var(--rose); }
 .tick.is-mark { pointer-events: none; }
@@ -559,7 +582,11 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
 .tip::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 0.5rem; }
 .tip__t { display: block; color: var(--on-field-2); }
 .tick[data-tip] .tip { opacity: 1; scale: 1; pointer-events: auto; }
+/* After a tip closes, the next opens with no delay and no fade for 600ms; keyboard focus always opens it at once. */
 .lane[data-instant] .tip { transition-duration: 0ms; }
+@media (prefers-reduced-motion: reduce) {
+  .tip { scale: 1; transition-property: opacity; }
+}
 
 .fallback {
   display: inline-flex;
@@ -667,6 +694,7 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 @media (hover: hover) and (pointer: fine) {
   .cap__full:hover { text-decoration-thickness: 2px; }
 }
+.cap__full:active, .fallback:active { text-decoration-thickness: 2px; }
 
 /* ------------------------------------------------------------------ the band: name, stage, notes, index */
 /* DOM and reading order at every width: name, Sidequest head (title, claim, keys), stage, body, flow, index.
@@ -763,6 +791,7 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   font-weight: 600;
   text-decoration: underline 1px color-mix(in srgb, var(--ink) 40%, transparent);
   text-underline-offset: 4px;
+  transition: text-decoration-color var(--t-hover) var(--ease-colour); /* in step with the row's fill */
 }
 .kicker {
   display: flex;
@@ -798,6 +827,8 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   .row:hover { background: var(--hover-tint); }
   .row:hover .row__title { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
 }
+.row:active { background: var(--hover-tint); }
+.row:active .row__title { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
 
 /* ------------------------------------------------------------------ entries after the band */
 .band + .entry, .entry + .entry, .entry + .pair { margin-top: var(--entry-gap); }
@@ -843,6 +874,7 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 @media (hover: hover) and (pointer: fine) {
   .qr:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 }
+.qr:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
 @media (min-width: 768px) {
   .phone { justify-content: flex-start; }
 }
@@ -981,13 +1013,14 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   overflow-wrap: normal;
 }
 .close__mail a {
+  display: inline-block; /* so the press scale applies; it still breaks after "@" inside its own box */
   text-decoration: underline 2px color-mix(in srgb, var(--ink) 40%, transparent);
   text-underline-offset: 10px;
-  transition: text-decoration-color var(--t-hover) ease;
 }
 @media (hover: hover) and (pointer: fine) {
   .close__mail a:hover { text-decoration-color: var(--ink); }
 }
+.close__mail a:active { text-decoration-color: var(--ink); }
 .close__row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: 2rem; }
 .close__where { color: var(--ink-2); }
 .close__host { white-space: nowrap; }
@@ -1021,14 +1054,7 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 @media (hover: hover) and (pointer: fine) {
   .foot__top:hover { text-decoration-thickness: 2px; }
 }
-
-/* ------------------------------------------------------------------ reduced motion: keep colour, drop scale */
-@media (prefers-reduced-motion: reduce) {
-  :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full):active { transform: none; }
-  .tip { scale: 1; transition-property: opacity; }
-  .tkey__i { transition: none; } /* the glyph swaps instantly */
-  [data-state='loading'] .tkey__i--load { animation: none; } /* and the loading glyph holds still */
-}
+.foot__top:active { text-decoration-thickness: 2px; }
 
 /* ------------------------------------------------------------------ print: stills, timecodes, outlines */
 @media print {
