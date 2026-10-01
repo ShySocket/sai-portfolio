@@ -449,18 +449,20 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) var(--
 .js .clip[data-static] .well { cursor: auto; }
 .js .clip[data-static] .well__video { visibility: visible; inset: 0; width: 100%; height: 100%; }
 
-/* Transport: one row of fixed cells aligned to the well. State changes only text inside a cell. */
+/* Transport: one row of fixed cells aligned to the well. State changes only text inside a cell. The readout cells
+   are 88 and 120px and hold every state at 100% text; under user text spacing (WCAG 1.4.12) they grow to fit their
+   text and the track gives way, so the timecode never overprints the state word. */
 .transport {
   width: 100%;
   display: grid;
   align-items: center;
   min-height: 4rem; /* 64 */
-  grid-template-columns: 4rem 5.5rem 7.5rem minmax(8rem, 1fr);
+  grid-template-columns: 4rem minmax(5.5rem, max-content) minmax(7.5rem, max-content) minmax(8rem, 1fr);
   grid-template-areas: 'key tc state track';
   font: 500 0.875rem/1.25rem var(--sans);
 }
 .transport--cues {
-  grid-template-columns: 4rem 5.5rem 7.5rem 3rem minmax(8rem, 1fr) 3rem;
+  grid-template-columns: 4rem minmax(5.5rem, max-content) minmax(7.5rem, max-content) 3rem minmax(8rem, 1fr) 3rem;
   grid-template-areas: 'key tc state prev track next';
   padding-right: 0.5rem; /* the next-cue key sits 10px from the edge, like the play key */
 }
@@ -538,21 +540,27 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
 .state__err { display: none; }
 [data-state='playing'] .state, [data-state='error'] .state { color: var(--on-field); }
 [data-state='error'] .state__err { display: block; }
+/* A clip that could not load has no time to read: the readout goes, and in the narrow row the state word and its
+   icon take its place (in the wide row the state keeps its own cell). */
+[data-state='error'] .tc { display: none; }
 
 .track { grid-area: track; position: relative; min-width: 0; align-self: center; margin-right: 1rem; }
 .transport--cues .track { margin-inline: 0.75rem; }
 .lane { position: relative; height: 1.5rem; scroll-margin-top: calc(var(--wh) + 2.5rem); }
 .lane:target { border-radius: 4px; box-shadow: 0 0 0 2px var(--on-field); }
+/* The rail is a border, not a fill: forced colours keeps a border (in CanvasText) and would paint a fill as Canvas,
+   which erased the track while its ticks stayed focusable. The tick marks are repainted there (forced colours, below). */
 .rail {
   position: absolute;
   inset: calc(50% - 1px) 0 auto;
-  height: 2px;
-  background: var(--track);
+  height: 0;
+  border-top: 2px solid var(--track);
 }
-/* Fill: 4px over the 2px rail, edged in ink on both long sides (rose on track is only 1.12:1). */
+/* Fill: 4px over the 2px rail, edged in ink on both long sides (rose on track is only 1.12:1). It is placed from the
+   rail's padding edge, under its 2px border. */
 .fill {
   position: absolute;
-  inset: -2px 0 auto;
+  inset: -4px 0 auto;
   height: 6px;
   border-block: 1px solid var(--ink);
   background: var(--on-field-2);
@@ -840,6 +848,19 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   border-left: 1px solid;
 }
 .row__award { font: 600 0.875rem/1.25rem var(--sans); text-wrap: balance; }
+/* The row is one link, named by everything in it. Its parts are separated only by space and drawn hairlines, so a
+   screen reader would run "Unity 6 Computer vision" together: each part but the last ends in a comma that is heard
+   and never seen (generated, so the verbatim copy is untouched). */
+.row__title::after, .kicker li::after {
+  content: ',';
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.kicker:last-child li:last-child::after { content: none; }
 .row__kind { display: none; color: var(--ink-2); }
 @media (min-width: 768px) {
   .row { grid-template-columns: 6rem minmax(0, 1fr) 1.25rem; }
@@ -1009,6 +1030,11 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   }
   .pair > .entry:first-child { grid-column: 1 / 8; }
   .pair > .entry:last-child { grid-column: 8 / -1; margin-top: 0; }
+  /* The heads fill the shared head row and their keys sit at its foot, so the two Watch keys share one line 32px over
+     both fields whatever each head holds above them (GyroBlaster has no claim). The keys keep their 24px under the
+     tags as padding, which an auto margin cannot hold. */
+  .pair .entry__head { align-self: stretch; display: flex; flex-direction: column; }
+  .pair .entry__head > .keys { margin-top: auto; padding-top: 1.5rem; }
 }
 
 /* Evidence rings: hovering or focusing a note draws a 2px ring on what it governs (never rose). */
@@ -1033,8 +1059,9 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 }
 
 /* ------------------------------------------------------------------ close and footer */
-/* The address breaks only after "@"; "andrew.cmu.edu" never breaks. The size is capped by the column
-   (12.5cqi: the 7.75em host stays within 97% of it), so with 200% text it shrinks instead of overflowing. */
+/* The address breaks only after "@"; "andrew.cmu.edu" has no break opportunity of its own, so it stays whole unless
+   it would overflow (user text spacing widens it past the 12.5cqi cap). The size is capped by the column (12.5cqi:
+   the 7.75em host stays within 97% of it), so with 200% text it shrinks instead of overflowing. */
 .close { margin-top: var(--entry-gap); container-type: inline-size; }
 .close__mail {
   font: 600 min(2.5rem, 12.5cqi) / 1.2 var(--display); /* 40/48 */
@@ -1062,7 +1089,7 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
   height: 0.75rem;
   border-left: 1px solid;
 }
-.close__host { white-space: nowrap; }
+.close__host { overflow-wrap: anywhere; }
 @media (min-width: 768px) {
   .close__mail { font-size: min(4rem, 12.5cqi); line-height: 1; } /* 64/64 */
 }
@@ -1095,13 +1122,28 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 }
 .foot__top:active { text-decoration-thickness: 2px; }
 
+/* ------------------------------------------------------------------ forced colours (Windows contrast themes) */
+/* Forced colours paint every fill as Canvas and drop every box-shadow. The rail is a border (above), so it stays, in
+   CanvasText; the tick marks take CanvasText as their own paint, and the progress and the held cue Highlight; every
+   key drawn by a fill or an inset ring gets a transparent outline, invisible elsewhere and a system colour here. */
+@media (forced-colors: active) {
+  .rail .fill { forced-color-adjust: none; background: Highlight; border-color: Canvas; }
+  .tick__mark { forced-color-adjust: none; background: CanvasText; }
+  .tick.is-pressed .tick__mark, .tick:active .tick__mark { background: Highlight; }
+  :where(.key--lead, .copy, .evkey, .qr, .tkey, .cue, .tip) { outline: 1px solid transparent; outline-offset: -1px; }
+  [aria-disabled='true'] { color: GrayText; }
+  [aria-disabled='true']::after { display: none; } /* the veil is a fill: GrayText says disabled instead */
+  .entry__title { text-decoration: none; } /* its resting underline is transparent; forced, it would read as a link */
+  .outline { forced-color-adjust: none; } /* drawn over a screenshot, whose own colours are kept */
+}
+
 /* ------------------------------------------------------------------ print: stills, timecodes, outlines */
 @media print {
   :root { --ground: #fff; --entry-gap: 3rem; } /* paper: entries closer, so pages fill */
   .field { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
   /* The paper shows the still, so it carries the still's own timecode, set in the caption's column: the transport
      (its live readout, whatever was playing when the page was printed, and its state word) stays on screen. */
-  .well__video, .transport, .keys .icon, .copy, .nav__right, .foot__top, .cap__full .icon { display: none !important; }
+  .top, .well__video, .transport, .keys .icon, .copy, .foot__top, .cap__full .icon { display: none !important; }
   .well__still { display: block !important; visibility: visible !important; }
   .cap { padding-top: 0.25rem; color: var(--ink); } /* the timecode line takes the transport row's place and height */
   .cap::before { content: attr(data-print); display: block; font-weight: 600; }

@@ -32,7 +32,8 @@ const photos = Object.entries(
       <Image class="phone__photo" src={p.src} alt={p.alt} height={552} densities={[1, 2]} format="webp" quality={80} loading="lazy" />
     ))}
     <a class="qr" href={media.qrHref} target="_blank" rel="noopener">
-      <img src={`${base}/${media.qr}`} alt={`QR code for ${media.qrHref}`} width="160" height="160" loading="lazy" />
+      {/* The card's text names the destination, so the code itself is not read out a second time. */}
+      <img src={`${base}/${media.qr}`} alt="" width="160" height="160" loading="lazy" />
       <span class="qr__line">Scan to play on your phone</span>
       <span class="qr__host">{host}</span>
       <span class="sr"> (opens in a new tab)</span>

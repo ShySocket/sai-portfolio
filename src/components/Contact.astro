@@ -6,7 +6,9 @@ const email = 'saib@andrew.cmu.edu';
 
 <section class="close" aria-labelledby="close-title">
   <h2 class="close__mail" id="close-title">
-    <a href={`mailto:${email}`} data-email>saib@<wbr /><span class="close__host">andrew.cmu.edu</span></a>
+    {/* The <wbr> lets the address break after "@"; the label keeps the name (and the heading's and region's, which
+        take it) free of the space browsers read at a <wbr>. */}
+    <a href={`mailto:${email}`} aria-label={email} data-email>saib@<wbr /><span class="close__host">andrew.cmu.edu</span></a>
   </h2>
   <div class="close__row">
     <CopyEmail size="lg" />

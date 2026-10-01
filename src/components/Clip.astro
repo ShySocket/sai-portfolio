@@ -80,7 +80,10 @@ const CLEAR = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAA
       <div class="lane" id={cuesId} role="toolbar" aria-label={`${p.title} cues`} data-lane>
         <span class="rail" aria-hidden="true"><span class="fill" data-fill></span></span>
         {clip.cues.map((c) => {
+          // A cue with no caption of its own shows the clip's label in its tip, but is named by its timecode only:
+          // the frame already carries that label as its name, so it is announced once.
           const caption = c.caption || label;
+          const name = c.caption ? `${timecode(c.t)}, ${c.caption}` : timecode(c.t);
           const id = cueId(p.slug, c.t);
           return (
             <a
@@ -93,7 +96,7 @@ const CLEAR = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAA
               tabindex={c.t === clip.t ? 0 : -1}
             >
               <span class="tick__mark" aria-hidden="true"></span>
-              <span class="sr">{timecode(c.t)}, {caption}</span>
+              <span class="sr">{name}</span>
               <span class="tip" aria-hidden="true"><span class="tip__t">{timecode(c.t)}</span>{caption}</span>
             </a>
           );

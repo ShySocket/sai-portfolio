@@ -10,6 +10,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
 const live = d.getElementById('live');
 const HALF_FRAME = 1 / 60;
+const SLOW = 250; // ms a wait the user did not start may last before the transport shows it
 
 const say = (msg: string) => {
   if (!live) return;
@@ -65,18 +66,30 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
   let cur = t0;
   let pressed: HTMLElement | null = null;
   let at = -1; // the cue on screen: arrow keys step from it, even when it is a mark that cannot hold focus
+  let slow = 0; // a wait nobody asked to see is shown only once it has lasted SLOW ms (see set)
+  let touch = false; // the last press on this transport was a finger or a pen, which cannot hover a tick
   const observers: { disconnect(): void }[] = [];
   signal.addEventListener('abort', () => {
+    clearTimeout(slow);
     observers.forEach((o) => o.disconnect());
     ticks.forEach((a) => cueById.delete(a.id));
   });
 
   v.removeAttribute('controls');
 
-  const set = (s: State) => {
-    state = s;
+  const shown = (s: State) => {
     tr.dataset.state = s;
     word.textContent = WORD[s];
+  };
+  /** The state changes at once, and so does the key's name (a second press still pauses). What the transport shows
+   *  follows at once too, except a quiet wait: loading the user did not ask for (the first autoplay, a stall mid-play)
+   *  keeps the glyph and word on screen until it has lasted SLOW ms, so a few frames of buffering never flash the
+   *  spinner and "Loading". A press on Play shows its loading glyph at once. */
+  const set = (s: State, quiet = false) => {
+    state = s;
+    clearTimeout(slow);
+    if (quiet && s === 'loading') slow = window.setTimeout(() => state === 'loading' && shown('loading'), SLOW);
+    else shown(s);
     const busy = s === 'playing' || s === 'loading';
     key.setAttribute('aria-label', `${busy ? 'Pause' : 'Play'} ${title} clip`);
     if (s === 'error') {
@@ -147,7 +160,7 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
     if (state === 'error') return;
     load();
     if (state === 'ready' || v.readyState < 1) seek(cur); // playback starts at the frame on screen
-    if (v.readyState < 3) set('loading');
+    if (v.readyState < 3) set('loading', intent === 'auto');
     v.play().catch((e: DOMException) => {
       if (e.name === 'NotAllowedError') set(state === 'loading' && !fig.classList.contains('is-live') ? 'ready' : 'paused');
       else if (e.name !== 'AbortError') set('error');
@@ -171,8 +184,9 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
     ticks.forEach((a, j) => (a.tabIndex = j === i ? 0 : -1));
     if (focus) ticks[i].focus();
   };
-  /** Seek to cue i and hold it: paused, timecode at the cue, the tick lit, the address in the URL. */
-  const cue = (i: number, opts: { focus?: boolean; address?: boolean } = {}) => {
+  /** Seek to cue i and hold it: paused, timecode at the cue, the tick lit, the address in the URL. Held by a finger or
+   *  reached by its address (an evidence key, a deep link), it also shows its caption: there is no hover to open it. */
+  const cue = (i: number, opts: { focus?: boolean; address?: boolean; tip?: boolean } = {}) => {
     const a = ticks[i];
     if (!a || state === 'error') return; // a clip that could not load holds its still and offers the link instead
     at = i;
@@ -182,6 +196,7 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
     set('paused');
     press(a);
     rove(i, !!opts.focus);
+    if (opts.tip || touch) tips.hold(a);
     if (opts.address !== false) history.replaceState(history.state, '', `#${a.id}`);
   };
 
@@ -189,15 +204,19 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
   v.addEventListener('playing', () => {
     set('playing');
     press(null);
+    tips.release();
     requestAnimationFrame(show);
     run();
   }, on);
-  v.addEventListener('waiting', () => state === 'playing' && set('loading'), on);
+  // The loop's wrap to 0:00 seeks, and Chrome reports that seek as a wait: it is not buffering, so it shows nothing.
+  v.addEventListener('waiting', () => state === 'playing' && !v.seeking && set('loading', true), on);
   v.addEventListener('pause', () => state !== 'error' && set('paused'), on);
   v.addEventListener('seeked', () => v.readyState >= 2 && requestAnimationFrame(show), on);
   v.addEventListener('error', () => set('error'), on);
 
   // Controls
+  tr.addEventListener('pointerdown', (e) => (touch = e.pointerType !== 'mouse'), on);
+  tr.addEventListener('keydown', () => (touch = false), on);
   key.addEventListener('click', () => {
     if (state === 'error') return;
     if (state === 'playing' || state === 'loading') {
@@ -222,7 +241,7 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
       e.preventDefault();
       cue(i);
     }, on);
-    cueById.set(a.id, () => cue(i, { address: false }));
+    cueById.set(a.id, () => cue(i, { address: false, tip: true }));
   });
   lane.addEventListener('keydown', (e) => {
     const f = ticks.indexOf(d.activeElement as HTMLAnchorElement);
@@ -252,7 +271,7 @@ function clip(fig: HTMLElement, signal: AbortSignal): Player {
   const ro = new ResizeObserver(guard);
   observers.push(ro);
   ro.observe(lane);
-  tooltips(lane, ticks, signal);
+  const tips = tooltips(lane, ticks, signal);
 
   const io = new IntersectionObserver(
     (es) => {
@@ -293,11 +312,14 @@ function unenhance(fig: HTMLElement) {
 }
 
 /** Tooltips (WCAG 1.4.13): 200ms hover delay, instant for 600ms after one closes, immediate on keyboard
- *  focus, hoverable (the tip is inside the link), persistent while hovered or focused, Esc dismisses. */
+ *  focus, hoverable (the tip is inside the link), persistent while hovered or focused, Esc dismisses.
+ *  A held cue (a tap, a cue key pressed by a finger, an address) opens its tip at once with no hover to keep it:
+ *  it stays while the cue is held and closes when the clip plays, at the next cue, on Esc, or when its tick blurs. */
 function tooltips(lane: HTMLElement, ticks: HTMLElement[], signal: AbortSignal) {
   const on = { signal };
   let timer = 0;
   let closed = 0;
+  let held: HTMLElement | null = null;
   const open = (a: HTMLElement) => {
     for (const b of ticks) if (b !== a) b.removeAttribute('data-tip');
     a.setAttribute('data-tip', '');
@@ -311,12 +333,14 @@ function tooltips(lane: HTMLElement, ticks: HTMLElement[], signal: AbortSignal) 
   for (const a of ticks) {
     a.addEventListener('pointerenter', (e) => {
       if (e.pointerType !== 'mouse') return;
+      if (held === a) held = null; // the pointer keeps it open from here, and closes it on leaving
       const instant = Date.now() - closed < 600;
       lane.toggleAttribute('data-instant', instant);
       clearTimeout(timer);
       timer = window.setTimeout(() => open(a), instant ? 0 : 200);
     }, on);
-    a.addEventListener('pointerleave', () => !a.matches(':focus-visible') && close(a), on);
+    // Only a mouse hovers: a finger "leaves" as it lifts, just before the click that holds the cue.
+    a.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && !a.matches(':focus-visible') && close(a), on);
     a.addEventListener('focus', () => {
       if (!a.matches(':focus-visible')) return;
       lane.toggleAttribute('data-instant', true);
@@ -327,6 +351,18 @@ function tooltips(lane: HTMLElement, ticks: HTMLElement[], signal: AbortSignal) 
   d.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') ticks.forEach(close);
   }, on);
+  return {
+    hold(a: HTMLElement) {
+      clearTimeout(timer);
+      held = a;
+      lane.toggleAttribute('data-instant', true);
+      open(a);
+    },
+    release() {
+      if (held && !held.matches(':focus-visible')) close(held);
+      held = null;
+    },
+  };
 }
 
 /** Copy email: the mailto link becomes a real button; labels crossfade in one grid cell (no resize). */
@@ -385,6 +421,9 @@ function init() {
       console.warn('Clip controls unavailable', e);
     }
   }
+  // iOS Safari applies :active to a button only when the page listens for touchstart, so without this the copy key and
+  // the transport keys gave no press answer under a finger. Passive and empty: it never delays a scroll.
+  d.body.addEventListener('touchstart', () => {}, { passive: true });
   try {
     copyEmail();
   } catch (e) {
