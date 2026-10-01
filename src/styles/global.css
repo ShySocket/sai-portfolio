@@ -177,15 +177,16 @@ p, li { text-wrap: pretty; }
   white-space: nowrap;
   text-decoration: none;
 }
-.key--primary {
+/* Tiered by evidence: a live build is the filled rose key, a recording the outlined key at the same size. */
+.key--lead {
   min-height: 3rem; /* 48 */
   max-width: 100%;
   padding: 0.5rem 1.25rem 0.5rem 1.5rem;
   border-radius: var(--r);
-  background: var(--rose);
-  color: var(--on-rose);
   font: 600 1.0625rem/1.75rem var(--sans);
 }
+.key--play { background: var(--rose); color: var(--on-rose); }
+.key--watch { box-shadow: inset 0 0 0 1px var(--ink-2); color: var(--ink); }
 .key--code {
   min-height: 2.75rem; /* 44 */
   gap: 0.25rem;
@@ -233,7 +234,8 @@ p, li { text-wrap: pretty; }
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .key--primary:hover { background: var(--rose-press); }
+  .key--play:hover { background: var(--rose-press); }
+  .key--watch:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
   .key--code:hover { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
   .nav__link:hover { text-decoration-thickness: 2px; }
   .copy:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
@@ -322,10 +324,10 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
 }
 
 @container page (width < 18rem) {
-  .key--primary { white-space: normal; text-align: center; }
+  .key--lead { white-space: normal; text-align: center; }
 }
 @media (max-width: 767.98px) {
-  .keys .key--primary { width: 100%; justify-content: center; }
+  .keys .key--lead { width: 100%; justify-content: center; }
 }
 .entry__head + :is(.clip, .phone, .spread) { margin-top: 2rem; }
 
