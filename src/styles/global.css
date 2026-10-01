@@ -836,8 +836,9 @@ html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no 
 /* ------------------------------------------------------------------ entries after the band */
 .band + .entry, .entry + .entry, .entry + .pair { margin-top: var(--entry-gap); }
 
-/* Phone: the screenshot is the field. */
-.phone { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 2rem; }
+/* Phone: the screenshot is the field. The QR card sits at the foot of the screenshot, so where the phone stands
+   beside the head (>= 1200) it is drawn below the Play and View code keys it follows in the DOM and tab order. */
+.phone { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 2rem; }
 .phone__photo { flex: none; height: 34.5rem; width: auto; max-width: 100%; object-fit: cover; border-radius: var(--r); }
 .phone__field {
   position: relative;
