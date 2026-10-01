@@ -2,9 +2,11 @@
 // One project entry: head (title, award, claim, tags, keys), the proof, then the body (summary, notes).
 // The layout family follows the media's shape: a wide stage (Sidequest), a portrait phone with its QR
 // handoff (Lazer Shooter), a screen spread (ReliefIQ), or one half of a pair (Sunrise, GyroBlaster).
-// The proof always sits directly after the claim it backs.
+// The proof always sits directly after the claim it backs. Where the first note names a chain (Sidequest's
+// pipeline), it is drawn after the notes.
 import Clip from './Clip.astro';
 import EntryText from './EntryText.astro';
+import Flow from './Flow.astro';
 import Phone from './Phone.astro';
 import Spread from './Spread.astro';
 import type { Project } from '../data/projects';
@@ -22,4 +24,5 @@ const family = pres.family;
   {family === 'phone' && <Phone project={p} />}
   {family === 'spread' && <Spread project={p} />}
   <EntryText project={p} pres={pres} part="body" />
+  {pres.flow && <Flow steps={pres.flow} labelledby={`${p.slug}-claim`} />}
 </article>

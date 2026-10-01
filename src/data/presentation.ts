@@ -2,7 +2,8 @@
 // main; this file only adds layout family, measured media addresses, thumbnails and evidence keys.
 //
 // Strings introduced here (evidence-key labels, cue captions and the clip provenance line) are new copy,
-// flagged for Sai's review.
+// flagged for Sai's review. Flow nodes are not: each is a verbatim phrase of projects.ts, and
+// scripts/verify-build.mjs fails the build if one is not.
 import type { ImageMetadata } from 'astro';
 import sidequestStill from '../assets/stills/sidequest-4.5.webp';
 import sunriseStill from '../assets/stills/sunrise-13.7.webp';
@@ -35,6 +36,9 @@ export type Clip = {
   provenance?: { facts: string[]; full?: { src: string; label: string } };
 };
 
+/** One step of a pipeline drawn under its notes: a verbatim phrase, optionally with parallel parts (verbatim). */
+export type FlowStep = { text: string; parts?: string[]; kind?: 'in' | 'out' };
+
 /** An evidence key after a note: where on the page its proof is. `target` is an element id. */
 export type Proof = { label: string; target: string; icon?: 'clock-play' };
 
@@ -44,6 +48,8 @@ export type Presentation = {
   thumb: { src: string; width: number; height: number };
   clip?: Clip;
   proofs?: Record<string, Proof>; // keyed by the note's lead-in title
+  /** The first note's chain, drawn as an ordered list after the notes (labelled by the claim). */
+  flow?: FlowStep[];
 };
 
 // Column widths in CSS px, as global.css lays them out: 32px margins and gutters from 768, 12 columns in a
@@ -92,6 +98,15 @@ export const presentation: Record<string, Presentation> = {
       'Footage becomes the level': { label: 'Show 0:04.5 in clip', target: 'sidequest-4.5', icon: 'clock-play' },
       'Choreography that stays a game': { label: 'Show cue track', target: 'sidequest-cues' },
     },
+    // "An offline Python pipeline turns dashcam video into a playable level: per-frame speed estimation, SAM 2
+    // segmentation of railings and hedges, hue-and-circularity marker tracking, and a frame-by-frame audit gate
+    // before anything ships." Only the phrases, never the sentence; the three analyses are parallel parts.
+    flow: [
+      { text: 'dashcam video', kind: 'in' },
+      { text: 'offline Python pipeline', parts: ['per-frame speed estimation', 'SAM 2 segmentation', 'hue-and-circularity marker tracking'] },
+      { text: 'frame-by-frame audit gate' },
+      { text: 'a playable level', kind: 'out' },
+    ],
   },
   'lazer-shooter': {
     family: 'phone',

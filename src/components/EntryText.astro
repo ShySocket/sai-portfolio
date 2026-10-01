@@ -20,7 +20,7 @@ const claim = p.bullets?.[0]?.title;
     {p.award && (
       <p class="award"><Icon name="award" size={20} class="award__icon" />{p.award}</p>
     )}
-    {claim && <p class="claim">{claim}</p>}
+    {claim && <p class="claim" id={`${p.slug}-claim`}>{claim}</p>}
     <ul class="tags" aria-label={`${p.title} stack`}>
       {p.tags.map((t) => <li>{t}</li>)}
     </ul>
