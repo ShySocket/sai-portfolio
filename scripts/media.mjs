@@ -3,16 +3,17 @@
 //
 //   node scripts/media.mjs
 //
-// Sources (not served): media-src/sidequest.mp4 (960x540, 30 fps, 750 frames), media-src/sunrise.mp4
-// (1280x720, 29.4 s editor capture), public/media/gyroblaster.mp4 (served unchanged) and src/assets/*.
-// Outputs: public/media/{sidequest-loop.mp4, sunrise-scene.mp4, *.webp stills, thumb-*.webp} and the
-// ReliefIQ detail crops in src/assets/crops/ (astro:assets re-encodes those at build).
+// Sources: media-src/sidequest.mp4 (960x540, 30 fps, 750 frames, 25.0 s), media-src/sunrise.mp4 (1280x720,
+// 29.4 s editor capture; not served), public/media/gyroblaster.mp4 (served unchanged) and src/assets/*.
+// Outputs: public/media/{sidequest-loop.mp4, sidequest.mp4 (the full capture, copied unchanged and linked
+// from the stage caption, never preloaded), sunrise-scene.mp4, *.webp stills, thumb-*.webp} and the
+// ReliefIQ detail crops in src/assets/crops/ (build inputs: astro:assets ships only their WebP encodes).
 //
 // Frame addresses were measured on the source: every Sidequest cue is 2-4 frames after the onset of its
 // "CLEAR ..." overlay (green-pixel mask at 30 fps, read by tesseract), so the label is fully opaque.
 
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, statSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, mkdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import sharp from 'sharp';
@@ -64,6 +65,10 @@ ff('-i', sq, '-t', '12', ...x264, '-b:v', '620k', '-pass', '1', '-passlogfile', 
 ff('-i', sq, '-t', '12', ...x264, '-b:v', '620k', '-maxrate', '1000k', '-bufsize', '1600k', '-pass', '2', '-passlogfile', pass, '-an', '-movflags', '+faststart', loop);
 log(loop);
 if (size(loop) > 1_000_000) throw new Error('sidequest-loop.mp4 is over 1,000,000 B');
+// The uncut capture, offered on demand under the stage ("Full capture, 3.7 MB" in presentation.ts).
+const full = join(OUT, 'sidequest.mp4');
+copyFileSync(sq, full);
+log(full);
 
 const sq135 = frame(sq, 135, join(tmp, 'sq-135.png')); // 4.5 s: "CLEAR sign, on bush", runner over the hedge
 // 1024w (upscaled from 960): the still must out-measure the 960x540 loop in LCP accounting where the stage well

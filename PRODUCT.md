@@ -35,7 +35,14 @@ Every project is something you can play or watch: a runner driven by real dashca
 - One accent colour.
 
 ## Evidence on Hand
-- Video with WebP posters in `public/media/`: `sidequest.mp4` (3.7 MB, gameplay-only clip recorded from the WebGL build), `sunrise.mp4` (1.1 MB), `gyroblaster.mp4` (0.9 MB).
+- Video in `public/media/`, re-derived from the sources by `node scripts/media.mjs`:
+  - `sidequest-loop.mp4` (0.9 MB, 960x540, 12.0 s): the first 12 s of the Sidequest capture; the only clip that may play on its own (muted, in the first viewport, never under reduced motion or Save-Data).
+  - `sidequest.mp4` (3.7 MB, 960x540, 25.0 s): the full gameplay-only capture recorded from the WebGL build, restored and linked under the stage as "Full capture, 3.7 MB"; never autoplayed or preloaded.
+  - `sunrise-scene.mp4` (0.8 MB, 600x338, 29.4 s): the Unity editor capture cropped to its Scene view. It replaces the full editor capture `sunrise.mp4` (1.1 MB, 1280x720), which is no longer served; the original is kept in git at tag `light-minimal` and as the source `media-src/sunrise.mp4`.
+  - `gyroblaster.mp4` (0.9 MB, 1280x720, 9.4 s), unchanged.
+- Sources (not served): `media-src/sidequest.mp4` and `media-src/sunrise.mp4`.
+- Stills and thumbnails in `public/media/`: the pinned frames `sidequest-4.5.webp`, `sunrise-19.0.webp` and `gyroblaster-4.6.webp` (posters and no-JS, print, reduced-motion and Save-Data frames), and `thumb-*.webp` for the project index. They replace the earlier `*-poster` images.
+- ReliefIQ detail crops in `src/assets/crops/` (PNG build inputs; only their WebP encodes ship).
 - Images in `src/assets/`: `relief-1..3.jpg` (ReliefIQ screens) and `lazer-home.png` (Lazer Shooter home screen); `public/media/lazer-qr.svg`.
 - Award: ReliefIQ won 1st place at the CMU NOVA Hackathon.
 - Absent: no testimonials, metrics, employer logos, headshot or résumé PDF. Do not fabricate any of them.
