@@ -41,7 +41,8 @@ Every project is something you can play or watch: a runner driven by real dashca
   - `sunrise-scene.mp4` (0.8 MB, 600x338, 29.4 s): the Unity editor capture cropped to its Scene view. It replaces the full editor capture `sunrise.mp4` (1.1 MB, 1280x720), which is no longer served; the original is kept in git at tag `light-minimal` and as the source `media-src/sunrise.mp4`.
   - `gyroblaster.mp4` (0.9 MB, 1280x720, 9.4 s), unchanged.
 - Sources (not served): `media-src/sidequest.mp4` and `media-src/sunrise.mp4`.
-- Stills and thumbnails in `public/media/`: the pinned frames `sidequest-4.5.webp`, `sunrise-19.0.webp` and `gyroblaster-4.6.webp` (posters and no-JS, print, reduced-motion and Save-Data frames), and `thumb-*.webp` for the project index. They replace the earlier `*-poster` images.
+- Pinned stills in `src/assets/stills/`, build inputs stored as q95 WebP that astro:assets ships as AVIF and WebP: `sidequest-4.5.webp` (1024x576), `sunrise-13.7.webp` (600x338, frame 411, the only stretch of the capture with nothing selected, so no transform gizmo) and `gyroblaster-4.6.webp` (960x540). They are the posters and the no-JS, print, reduced-motion and Save-Data frames, and replace the `public/media/*-N.webp` stills and the earlier `*-poster` images.
+- Thumbnails `thumb-*.webp` for the project index, in `public/media/`.
 - ReliefIQ detail crops in `src/assets/crops/` (PNG build inputs; only their WebP encodes ship).
 - Images in `src/assets/`: `relief-1..3.jpg` (ReliefIQ screens) and `lazer-home.png` (Lazer Shooter home screen); `public/media/lazer-qr.svg`.
 - Award: ReliefIQ won 1st place at the CMU NOVA Hackathon.

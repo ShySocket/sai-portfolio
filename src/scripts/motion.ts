@@ -32,6 +32,7 @@ const cueById = new Map<string, () => void>();
 
 function clip(fig: HTMLElement) {
   const v = fig.querySelector('video')!;
+  const frameLabel = fig.querySelector<HTMLImageElement>('.well__still')!.alt;
   const tr = fig.querySelector<HTMLElement>('[data-transport]')!;
   const key = tr.querySelector<HTMLButtonElement>('[data-play]')!;
   const word = tr.querySelector('[data-word]')!;
@@ -88,9 +89,11 @@ function clip(fig: HTMLElement) {
     disable(next, nextIndex(1) < 0);
   };
 
-  // The video is out of paint until it has a frame; then it replaces the still in the same place.
+  // The video is out of paint until it has a frame; then it replaces the still in the same place, and takes over
+  // the still's name (the still is hidden from then on, so the label is still announced once).
   const show = () => {
     if (fig.classList.contains('is-live')) return;
+    v.setAttribute('aria-label', frameLabel);
     fig.classList.add('is-live');
     if (state === 'playing') run();
   };

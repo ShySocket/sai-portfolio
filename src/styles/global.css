@@ -348,6 +348,7 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
   overflow: hidden;
   background: var(--ink);
 }
+.well > picture { display: contents; }
 .well__video, .well__still {
   position: absolute;
   inset: 0;
@@ -355,6 +356,8 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
   height: 100%;
   object-fit: cover;
 }
+/* The video sits over the still. Its poster is a transparent pixel, so before it has a frame (no JS, or a clip
+   that fell back to native controls) the still shows through it, under the native controls. */
 .js .well { cursor: pointer; }
 /* With JS the frame sits 1px inside the well, so the pinned still stays the page's largest paint (the LCP):
    on fractional column edges the video's first frame otherwise outranks it by a few px². Ink shows in the 1px. */
@@ -362,7 +365,6 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
 .js .is-live .well__video { visibility: visible; }
 .js .well__video::-webkit-media-controls { display: none !important; }
 .is-live .well__still { visibility: hidden; }
-html:not(.js) .well__still { display: none; }
 
 /* Transport: one row of fixed cells aligned to the well. State changes only text inside a cell. */
 .transport {
@@ -888,7 +890,7 @@ html:not(.js) .cap { padding-top: 0.75rem; } /* no transport row above it withou
 
 /* Evidence rings: hovering or focusing a note draws a 2px ring on what it governs (never rose). */
 .entry:has(.note[data-proof='sidequest-4.5']:focus-within) .tick[data-ring='sidequest-4.5'],
-.entry:has(.note[data-proof='sunrise-19.0']:focus-within) .tick[data-ring='sunrise-19.0'],
+.entry:has(.note[data-proof='sunrise-13.7']:focus-within) .tick[data-ring='sunrise-13.7'],
 .entry:has(.note[data-proof='sidequest-cues']:focus-within) .lane { box-shadow: 0 0 0 2px var(--on-field); }
 .entry:has(.note[data-proof='reliefiq-allocation']:focus-within) .outline[data-ring='reliefiq-allocation'],
 .entry:has(.note[data-proof='reliefiq-volunteer']:focus-within) .outline[data-ring='reliefiq-volunteer'],
@@ -899,7 +901,7 @@ html:not(.js) .cap { padding-top: 0.75rem; } /* no transport row above it withou
 .spread:has(#reliefiq-volunteer:target) .crop--volunteer { outline: 2px solid var(--on-field); outline-offset: 4px; }
 @media (hover: hover) and (pointer: fine) {
   .entry:has(.note[data-proof='sidequest-4.5']:hover) .tick[data-ring='sidequest-4.5'],
-  .entry:has(.note[data-proof='sunrise-19.0']:hover) .tick[data-ring='sunrise-19.0'],
+  .entry:has(.note[data-proof='sunrise-13.7']:hover) .tick[data-ring='sunrise-13.7'],
   .entry:has(.note[data-proof='sidequest-cues']:hover) .lane { box-shadow: 0 0 0 2px var(--on-field); }
   .entry:has(.note[data-proof='reliefiq-allocation']:hover) .outline[data-ring='reliefiq-allocation'],
   .entry:has(.note[data-proof='reliefiq-volunteer']:hover) .outline[data-ring='reliefiq-volunteer'] { box-shadow: 0 0 0 2px var(--ink); }

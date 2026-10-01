@@ -14,7 +14,7 @@ const root = resolve(new URL('..', import.meta.url).pathname);
 const b64 = (p) => readFileSync(join(root, p)).toString('base64');
 const display = b64('node_modules/@fontsource/funnel-display/files/funnel-display-latin-600-normal.woff2');
 const sans = b64('node_modules/@fontsource-variable/funnel-sans/files/funnel-sans-latin-wght-normal.woff2');
-const still = b64('public/media/sidequest-4.5.webp');
+const still = b64('src/assets/stills/sidequest-4.5.webp'); // the pinned frame (build input; q95)
 const cues = [1.7, 4.5, 7.7, 9.4, 11.2];
 const dur = 12;
 const play = 'M7 4v16l13 -8l-13 -8'; // Tabler player-play

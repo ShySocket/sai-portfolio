@@ -4,6 +4,8 @@ import '@fontsource-variable/funnel-sans/wght.css';
 import displayFont from '@fontsource/funnel-display/files/funnel-display-latin-600-normal.woff2?url';
 import sansFont from '@fontsource-variable/funnel-sans/files/funnel-sans-latin-wght-normal.woff2?url';
 import '../styles/global.css';
+import { presentation } from '../data/presentation';
+import { stillSources } from '../data/stills';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const title = 'Sai Bhandar | Business + CS @ CMU';
@@ -12,6 +14,9 @@ const description =
   'Sai Bhandar, Business + CS at Carnegie Mellon. Sidequest turns dashcam video into a playable level; Lazer Shooter is laser tag with on-device vision; ReliefIQ won 1st place at the CMU NOVA Hackathon.';
 const canonical = new URL(base + '/', Astro.site).href;
 const og = `${canonical}og.png`;
+// The stage still is the LCP: preload the AVIF set its <picture> picks from (the same srcset and sizes, so the
+// response is reused). Browsers without AVIF skip this hint and take the WebP source as usual.
+const stage = await stillSources(presentation.sidequest.clip!);
 ---
 
 <!doctype html>
@@ -27,7 +32,7 @@ const og = `${canonical}og.png`;
     <link rel="icon" type="image/png" href={`${base}/favicon.png`} />
     <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={sansFont} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={`${base}/media/sidequest-4.5.webp`} as="image" type="image/webp" fetchpriority="high" />
+    <link rel="preload" as="image" type="image/avif" imagesrcset={stage.avif} imagesizes={stage.sizes} fetchpriority="high" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Sai Bhandar" />
     <meta property="og:title" content={title} />

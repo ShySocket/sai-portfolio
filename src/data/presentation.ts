@@ -3,6 +3,10 @@
 //
 // Strings introduced here (evidence-key labels, cue captions and the clip provenance line) are new copy,
 // flagged for Sai's review.
+import type { ImageMetadata } from 'astro';
+import sidequestStill from '../assets/stills/sidequest-4.5.webp';
+import sunriseStill from '../assets/stills/sunrise-13.7.webp';
+import gyroblasterStill from '../assets/stills/gyroblaster-4.6.webp';
 
 export type Family = 'stage' | 'phone' | 'spread' | 'pair';
 
@@ -11,9 +15,14 @@ export type Cue = { t: number; caption: string };
 
 export type Clip = {
   src: string; // served path under public/
-  still: string; // the pinned frame at `t`: shown at first paint, for no JS, print, reduced motion, Save-Data
+  /** The pinned frame at `t` (a build input): shown at first paint, for no JS, print, reduced motion, Save-Data.
+   *  It ships as AVIF and WebP at `widths`; never read its fields directly (that ships the original too). */
+  still: ImageMetadata;
   width: number; // intrinsic size of the still
   height: number;
+  widths: number[];
+  /** The well's rendered width at each layout (global.css): the band and pair columns, or full bleed. */
+  sizes: string;
   t: number;
   duration: number;
   cues: Cue[];
@@ -37,6 +46,12 @@ export type Presentation = {
   proofs?: Record<string, Proof>; // keyed by the note's lead-in title
 };
 
+// Column widths in CSS px, as global.css lays them out: 32px margins and gutters from 768, 12 columns in a
+// content box capped at 1600px. `cols(n)` is n columns plus their n - 1 gutters.
+const content = 'min(100vw - 64px, 1600px)';
+const cols = (n: number) => `calc((${content} - 352px) * ${n} / 12 + ${(n - 1) * 32}px)`;
+const narrow = '(min-width: 768px) min(1120px, calc(100vw - 64px)), 100vw'; // a field in the column, or full bleed
+
 // Sidequest cue captions are the clip's own overlay text; "Audit overlay:" says what that text is.
 const audit = (label: string) => `Audit overlay: CLEAR ${label}`;
 
@@ -47,12 +62,14 @@ export const presentation: Record<string, Presentation> = {
     thumb: { src: 'media/thumb-sidequest.webp', width: 96, height: 56 },
     clip: {
       src: 'media/sidequest-loop.mp4',
-      still: 'media/sidequest-4.5.webp',
+      still: sidequestStill,
       // 1024x576, a little over the loop's 960x540: where the stage upscales (wells over 960px), Chrome caps an
-      // element's LCP size at its intrinsic area, so the still must out-measure the video's first frame to stay
-      // the LCP (+3.3 KB). Below 960px the video's 1px inset (global.css) does the same job.
+      // element's LCP size at its intrinsic area, so the widest still the srcset offers (1024w) must out-measure
+      // the video's first frame to stay the LCP. Below 960px the video's 1px inset (global.css) does the same job.
       width: 1024,
       height: 576,
+      widths: [480, 768, 1024],
+      sizes: `(min-width: 1024px) ${cols(8)}, 100vw`, // columns 5-12 of the band from 1024; full bleed below
       t: 4.5,
       duration: 12,
       autoplay: true,
@@ -96,15 +113,19 @@ export const presentation: Record<string, Presentation> = {
     thumb: { src: 'media/thumb-sunrise.webp', width: 96, height: 56 },
     clip: {
       src: 'media/sunrise-scene.mp4',
-      still: 'media/sunrise-19.0.webp',
+      still: sunriseStill,
       width: 600,
       height: 338,
-      t: 19,
+      widths: [600],
+      sizes: `(min-width: 1200px) ${cols(7)}, ${narrow}`,
+      // Frame 411: two stacked floors with decals, and the only stretch with nothing selected (no transform
+      // gizmo or camera frustum over the scene; see scripts/media.mjs).
+      t: 13.7,
       duration: 29.4,
-      cues: [{ t: 19, caption: '' }], // caption falls back to media.label (verbatim)
+      cues: [{ t: 13.7, caption: '' }], // caption falls back to media.label (verbatim)
     },
     proofs: {
-      'Hybrid XY / Z generation': { label: 'Show 0:19.0 in clip', target: 'sunrise-19.0', icon: 'clock-play' },
+      'Hybrid XY / Z generation': { label: 'Show 0:13.7 in clip', target: 'sunrise-13.7', icon: 'clock-play' },
     },
   },
   gyroblaster: {
@@ -113,9 +134,11 @@ export const presentation: Record<string, Presentation> = {
     thumb: { src: 'media/thumb-gyroblaster.webp', width: 96, height: 56 },
     clip: {
       src: 'media/gyroblaster.mp4',
-      still: 'media/gyroblaster-4.6.webp',
+      still: gyroblasterStill,
       width: 960,
       height: 540,
+      widths: [480, 768, 960],
+      sizes: `(min-width: 1200px) ${cols(5)}, ${narrow}`,
       t: 4.6,
       duration: 9.4,
       cues: [{ t: 4.6, caption: '' }],
