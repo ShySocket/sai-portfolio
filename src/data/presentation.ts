@@ -44,8 +44,11 @@ export const presentation: Record<string, Presentation> = {
     clip: {
       src: 'media/sidequest-loop.mp4',
       still: 'media/sidequest-4.5.webp',
-      width: 960,
-      height: 540,
+      // 1024x576, a little over the loop's 960x540: where the stage upscales (wells over 960px), Chrome caps an
+      // element's LCP size at its intrinsic area, so the still must out-measure the video's first frame to stay
+      // the LCP (+3.3 KB). Below 960px the video's 1px inset (global.css) does the same job.
+      width: 1024,
+      height: 576,
       t: 4.5,
       duration: 12,
       autoplay: true,
@@ -85,8 +88,8 @@ export const presentation: Record<string, Presentation> = {
     clip: {
       src: 'media/sunrise-scene.mp4',
       still: 'media/sunrise-19.0.webp',
-      width: 624,
-      height: 352,
+      width: 600,
+      height: 338,
       t: 19,
       duration: 29.4,
       cues: [{ t: 19, caption: '' }], // caption falls back to media.label (verbatim)

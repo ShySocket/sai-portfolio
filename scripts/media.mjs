@@ -66,16 +66,20 @@ log(loop);
 if (size(loop) > 1_000_000) throw new Error('sidequest-loop.mp4 is over 1,000,000 B');
 
 const sq135 = frame(sq, 135, join(tmp, 'sq-135.png')); // 4.5 s: "CLEAR sign, on bush", runner over the hedge
-await webp(sq135, join(OUT, 'sidequest-4.5.webp'), { width: 960, quality: 80 });
+// 1024w (upscaled from 960): the still must out-measure the 960x540 loop in LCP accounting where the stage well
+// is wider than 960px, or the loop's first frame replaces it as the LCP at 1536 and 1600 (see presentation.ts).
+await webp(sq135, join(OUT, 'sidequest-4.5.webp'), { width: 1024, quality: 80 });
 await thumb(sq135, join(OUT, 'thumb-sidequest.webp'), { width: 192, height: 112, quality: 60 });
 
 // ---------------------------------------------------------------- Sunrise
-// The editor capture cropped to its Scene view (x292 y72 624x352), where the floors assemble.
+// The editor capture cropped to its Scene view (x292 y72 600x338), where the floors assemble. The crop stops
+// 24px short of the view's right edge, so the Scene menu glyph and the orientation gizmo's cone stay out.
 const sr = join(SRC, 'sunrise.mp4');
 const scene = join(OUT, 'sunrise-scene.mp4');
-ff('-i', sr, '-vf', 'crop=624:352:292:72', ...x264, '-crf', '27', '-an', '-movflags', '+faststart', scene);
+const SCENE = 'crop=600:338:292:72';
+ff('-i', sr, '-vf', SCENE, ...x264, '-crf', '27', '-an', '-movflags', '+faststart', scene);
 log(scene);
-const sr570 = frame(sr, 570, join(tmp, 'sr-570.png'), 'crop=624:352:292:72'); // 19.0 s: assembled floor with decals
+const sr570 = frame(sr, 570, join(tmp, 'sr-570.png'), SCENE); // 19.0 s: assembled floor with decals
 await webp(sr570, join(OUT, 'sunrise-19.0.webp'), { quality: 80 });
 await thumb(sr570, join(OUT, 'thumb-sunrise.webp'), { width: 192, height: 112, quality: 64 });
 

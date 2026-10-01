@@ -334,7 +334,9 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
   object-fit: cover;
 }
 .js .well { cursor: pointer; }
-.js .well__video { visibility: hidden; }
+/* With JS the frame sits 1px inside the well, so the pinned still stays the page's largest paint (the LCP):
+   on fractional column edges the video's first frame otherwise outranks it by a few px². Ink shows in the 1px. */
+.js .well__video { visibility: hidden; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); }
 .js .is-live .well__video { visibility: visible; }
 .js .well__video::-webkit-media-controls { display: none !important; }
 .is-live .well__still { visibility: hidden; }
@@ -346,13 +348,14 @@ html:not(.js) .well__still { display: none; }
   display: grid;
   align-items: center;
   min-height: 4rem; /* 64 */
-  grid-template-columns: 4rem 6rem 7rem minmax(8rem, 1fr);
+  grid-template-columns: 4rem 5.5rem 7.5rem minmax(8rem, 1fr);
   grid-template-areas: 'key tc state track';
   font: 500 0.875rem/1.25rem var(--sans);
 }
 .transport--cues {
-  grid-template-columns: 4rem 6rem 7rem minmax(8rem, 1fr) 3rem 3rem;
-  grid-template-areas: 'key tc state track prev next';
+  grid-template-columns: 4rem 5.5rem 7.5rem 3rem minmax(8rem, 1fr) 3rem;
+  grid-template-areas: 'key tc state prev track next';
+  padding-right: 0.5rem; /* the next-cue key sits 10px from the edge, like the play key */
 }
 html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflow: hidden; }
 
@@ -404,7 +407,7 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 [data-state='error'] .state__err { display: block; }
 
 .track { grid-area: track; position: relative; min-width: 0; align-self: center; margin-right: 1rem; }
-.transport--cues .track { margin-right: 0.75rem; }
+.transport--cues .track { margin-inline: 0.75rem; }
 .lane { position: relative; height: 1.5rem; scroll-margin-top: calc(var(--wh) + 2.5rem); }
 .lane:target { border-radius: 4px; box-shadow: 0 0 0 2px var(--on-field); }
 .rail {
@@ -469,6 +472,9 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
   pointer-events: none;
   transition: opacity var(--t-tip) var(--ease-out), scale var(--t-tip) var(--ease-out);
 }
+/* A transparent bridge over the 8px gap, so the pointer can travel from the tick onto its tooltip without
+   leaving the link (WCAG 1.4.13, hoverable). It takes pointer events only while the tip is open. */
+.tip::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 0.5rem; }
 .tip__t { display: block; color: var(--on-field-2); }
 .tick[data-tip] .tip { opacity: 1; scale: 1; pointer-events: auto; }
 .lane[data-instant] .tip { transition-duration: 0ms; }
@@ -497,26 +503,50 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
   .transport--cues {
     grid-template-columns: 3.25rem 2.75rem minmax(0, auto) 1fr 2.75rem;
     grid-template-areas: 'key prev tc state next' 'key prev track track next';
+    padding-right: 0.25rem; /* 4px either end; the 320px track stays 172px, so cues sit >= 24.4px apart */
   }
-  .transport--cues .track { margin-right: 0.25rem; }
+  .transport--cues .track { margin-inline: 0 0.25rem; }
   .tc, .state { align-self: end; color: var(--on-field-2); }
   .state { padding-left: 0.5rem; }
   .transport--cues .tc { padding-left: 0.25rem; }
   .track { align-self: center; }
 }
-/* 200% text on a phone: cells wrap into rows instead of overflowing. */
+/* A cue transport takes the narrow row 2rem sooner: in the wide row its track would put the 7.7 and 9.4 ticks
+   under 24px apart for fields 544-559px wide, and one tick would have to drop to an unfocusable mark. */
+@container clip (34rem <= width < 36rem) {
+  .transport--cues {
+    min-height: 3.5rem;
+    grid-template-columns: 3.25rem 2.75rem minmax(0, auto) 1fr 2.75rem;
+    grid-template-rows: 1.5rem 2rem;
+    grid-template-areas: 'key prev tc state next' 'key prev track track next';
+    padding-right: 0.25rem;
+  }
+  .transport--cues .track { margin-inline: 0 0.25rem; align-self: center; }
+  .transport--cues :is(.tc, .state) { align-self: end; color: var(--on-field-2); }
+  .transport--cues .tc { padding-left: 0.25rem; }
+  .transport--cues .state { padding-left: 0.5rem; }
+}
+/* 200% text on a phone: cells wrap into rows instead of overflowing, still in DOM order (key, previous cue,
+   ticks, next cue), with the readout beside the key and every cell inset from the field edge. */
 @container clip (width < 19rem) {
   .transport, .transport--cues {
-    grid-template-columns: 3.5rem 2.75rem 2.75rem minmax(0, 1fr);
+    grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem;
     grid-template-rows: auto;
-    grid-template-areas: 'key prev next .' 'tc tc tc tc' 'state state state state' 'track track track track';
+    grid-template-areas: 'key tc tc' 'key state state' 'prev . .' 'track track track' '. . next';
+    row-gap: 0.25rem;
+    padding: 0 0 0.25rem;
   }
-  .tc, .state { white-space: normal; padding-left: 0; }
+  .transport :is(.tc, .state) { white-space: normal; padding-inline: 0.5rem 0.75rem; align-self: center; }
   .track, .transport--cues .track { margin-inline: 0.75rem; }
 }
 
 /* ------------------------------------------------------------------ the band: name, stage, notes, index */
 .band > .entry--stage .clip { margin-top: 2rem; margin-inline: calc(-1 * var(--edge)); border-radius: 0; max-width: none; }
+/* A field that touches both viewport edges fills them: its well takes the full width (the height stays on the
+   lattice, cropping <= 1.8%), so no hairline of ink flanks the frame at widths that are not multiples of 8. */
+@media (max-width: 1199.98px) {
+  .band > .entry--stage .clip { --ww: min(100cqi, var(--well-max)); --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px); }
+}
 @media (min-width: 768px) {
   .band > .entry--stage .entry__text { margin-top: 2rem; }
 }
@@ -529,7 +559,11 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
     grid-template-rows: auto auto 1fr;
     column-gap: var(--gutter);
   }
-  .hero { grid-column: 1 / 5; grid-row: 1; }
+  /* The article spans the whole band on a subgrid; positioning lifts the hero above its (empty) box, so the
+     name and tagline stay selectable (no z-index: tooltips keep the only one). The hero may use the gutter
+     beside it: from 1200 to 1210px the four-column cell is 357px and the 64px name is 360.5px, so it would
+     otherwise wrap onto two lines. */
+  .hero { grid-column: 1 / 5; grid-row: 1; position: relative; margin-right: calc(-1 * var(--gutter)); }
   /* The article spans the band on a subgrid, so its figure and text land in their own cells. */
   .band > .entry--stage {
     grid-column: 1 / -1;
@@ -597,7 +631,7 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
   height: 0.75rem;
   background: currentColor;
 }
-.row__award { font: 600 0.875rem/1.25rem var(--sans); }
+.row__award { font: 600 0.875rem/1.25rem var(--sans); text-wrap: balance; }
 .row__kind { display: none; color: var(--ink-2); }
 .row__go { color: var(--ink-2); }
 @media (min-width: 768px) {
@@ -653,7 +687,7 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
     text-decoration: none;
   }
   .qr img { width: 10rem; height: 10rem; }
-  .qr__line { max-width: 10rem; }
+  .qr__line { max-width: 10rem; text-wrap: balance; }
   .qr__host { color: var(--ink-2); white-space: nowrap; }
 }
 @media (hover: hover) and (pointer: fine) {
@@ -727,7 +761,13 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
   }
 }
 @media (max-width: 767.98px) {
-  .entry--pair .clip { margin-inline: calc(-1 * var(--edge)); border-radius: 0; max-width: none; }
+  .entry--pair .clip {
+    margin-inline: calc(-1 * var(--edge));
+    border-radius: 0;
+    max-width: none;
+    --ww: min(100cqi, var(--well-max));
+    --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
+  }
 }
 @media (min-width: 1200px) {
   .pair {

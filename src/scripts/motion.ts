@@ -53,6 +53,7 @@ function clip(fig: HTMLElement) {
   let loaded = false;
   let cur = t0;
   let pressed: HTMLElement | null = null;
+  let at = -1; // the cue on screen: arrow keys step from it, even when it is a mark that cannot hold focus
 
   v.removeAttribute('controls');
 
@@ -64,6 +65,8 @@ function clip(fig: HTMLElement) {
     key.setAttribute('aria-label', `${busy ? 'Pause' : 'Play'} ${title} clip`);
     if (s === 'error') {
       key.setAttribute('aria-disabled', 'true');
+      disable(prev, true);
+      disable(next, true);
       tr.querySelector<HTMLElement>('.fallback')?.removeAttribute('hidden');
     }
   };
@@ -80,6 +83,7 @@ function clip(fig: HTMLElement) {
     cur = t;
     now.textContent = fmt(t);
     fill.style.transform = `scaleX(${Math.min(Math.max(t / dur, 0), 1)})`;
+    if (state === 'error') return;
     disable(prev, nextIndex(-1) < 0);
     disable(next, nextIndex(1) < 0);
   };
@@ -152,7 +156,8 @@ function clip(fig: HTMLElement) {
   /** Seek to cue i and hold it: paused, timecode at the cue, the tick lit, the address in the URL. */
   const cue = (i: number, opts: { focus?: boolean; address?: boolean } = {}) => {
     const a = ticks[i];
-    if (!a) return;
+    if (!a || state === 'error') return; // a clip that could not load holds its still and offers the link instead
+    at = i;
     intent = 'user-pause';
     v.pause();
     seek(times[i]);
@@ -202,8 +207,9 @@ function clip(fig: HTMLElement) {
     cueById.set(a.id, () => cue(i, { address: false }));
   });
   lane.addEventListener('keydown', (e) => {
-    const i = ticks.indexOf(d.activeElement as HTMLAnchorElement);
-    if (i < 0) return;
+    const f = ticks.indexOf(d.activeElement as HTMLAnchorElement);
+    if (f < 0) return;
+    const i = ticks[at]?.classList.contains('is-mark') ? at : f;
     const j = ({ ArrowLeft: i - 1, ArrowRight: i + 1, Home: 0, End: ticks.length - 1 } as Record<string, number>)[e.key];
     if (j === undefined) return;
     e.preventDefault();

@@ -38,10 +38,12 @@ const cuesId = `${p.slug}-cues`;
       height={clip.height}
       aria-label={label}
     ></video>
+    {/* The still carries the verbatim label while it is the frame on screen; once the video takes over, the
+        still is hidden and the video's own label is the one exposed, so it is announced once. */}
     <img
       class="well__still"
       src={`${base}/${clip.still}`}
-      alt=""
+      alt={label}
       width={clip.width}
       height={clip.height}
       decoding="async"
@@ -57,6 +59,11 @@ const cuesId = `${p.slug}-cues`;
     </button>
     <span class="tc"><span data-now>{timecode(clip.t)}</span> / {timecode(clip.duration, false)}</span>
     <span class="state"><Icon name="alert-triangle" size={16} class="state__err" /><span data-word>Ready</span></span>
+    {/* The cue keys flank the track (previous before it, next after it) at every width, so the tab order
+        (key, previous, ticks, next) is the visual order in the wide row, the narrow row and the 200% layout. */}
+    {clip.cueKeys && (
+      <button class="cue cue--prev" type="button" aria-label="Previous cue" data-cue="-1"><Icon name="player-skip-back" size={20} /></button>
+    )}
     <div class="track">
       <div class="lane" id={cuesId} role="toolbar" aria-label={`${p.title} cues`} data-lane>
         <span class="rail" aria-hidden="true"><span class="fill" data-fill></span></span>
@@ -87,10 +94,7 @@ const cuesId = `${p.slug}-cues`;
       )}
     </div>
     {clip.cueKeys && (
-      <>
-        <button class="cue cue--prev" type="button" aria-label="Previous cue" data-cue="-1"><Icon name="player-skip-back" size={20} /></button>
-        <button class="cue cue--next" type="button" aria-label="Next cue" data-cue="1"><Icon name="player-skip-forward" size={20} /></button>
-      </>
+      <button class="cue cue--next" type="button" aria-label="Next cue" data-cue="1"><Icon name="player-skip-forward" size={20} /></button>
     )}
   </div>
 </figure>
