@@ -25,6 +25,9 @@ const OUT = resolve(process.env.A11Y_OUT || join(homedir(), 'Documents/autopilot
 const root = resolve(new globalThis.URL('..', import.meta.url).pathname);
 const TOLERANCE = 0.01; // % of pixels allowed to differ (video frame-0 decode jitter is ~0.004%)
 const CLS_MAX = 0.02;
+// Chrome cannot capture more than 16384 device px in one screenshot; past that the bottom of a full-page
+// shot repeats the top. Pages taller than this at the viewport's DPR get their full-page shot at DPR 1.
+const MAX_CAPTURE_PX = 16384;
 const ALL_VIEWPORTS = {
   mobile: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
   tablet: { viewport: { width: 768, height: 1024 }, deviceScaleFactor: 1 },
@@ -85,23 +88,35 @@ process.exit(failed ? 1 : 0);
 
 async function shots(name) {
   for (const [vp, device] of Object.entries(VIEWPORTS)) {
-    const context = await browser.newContext({ ...device, reducedMotion: 'reduce' });
-    const page = await context.newPage();
-    await page.goto(SITE, { waitUntil: 'networkidle' });
-    await settle(page);
-    await page.evaluate(async () => {
-      // Freeze videos on frame 0 (the site's IntersectionObserver would otherwise play them).
-      const videos = [...document.querySelectorAll('video')];
-      for (const v of videos) { v.play = () => Promise.resolve(); v.pause(); }
-      await Promise.all(videos.map((v) => new Promise((r) => { v.addEventListener('seeked', r, { once: true }); v.currentTime = 0; setTimeout(r, 1500); })));
-      await new Promise((r) => setTimeout(r, 300));
-    });
+    const { context, page } = await openFrozen(device);
     const file = join(OUT, `${name}-${vp}.png`);
-    await page.screenshot({ path: file, fullPage: true });
     await page.screenshot({ path: join(OUT, `${name}-${vp}-fold.png`) });
-    console.log(`${file} ${device.viewport.width}x${await page.evaluate(() => document.documentElement.scrollHeight)}`);
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    if (height * device.deviceScaleFactor > MAX_CAPTURE_PX) {
+      const tall = await openFrozen({ ...device, deviceScaleFactor: 1 });
+      await tall.page.screenshot({ path: file, fullPage: true });
+      await tall.context.close();
+    } else {
+      await page.screenshot({ path: file, fullPage: true });
+    }
+    console.log(`${file} ${device.viewport.width}x${height}${height * device.deviceScaleFactor > MAX_CAPTURE_PX ? ' (full page at DPR 1)' : ''}`);
     await context.close();
   }
+}
+
+async function openFrozen(device) {
+  const context = await browser.newContext({ ...device, reducedMotion: 'reduce' });
+  const page = await context.newPage();
+  await page.goto(SITE, { waitUntil: 'networkidle' });
+  await settle(page);
+  await page.evaluate(async () => {
+    // Freeze videos on frame 0 (the site's IntersectionObserver would otherwise play them).
+    const videos = [...document.querySelectorAll('video')];
+    for (const v of videos) { v.play = () => Promise.resolve(); v.pause(); }
+    await Promise.all(videos.map((v) => new Promise((r) => { v.addEventListener('seeked', r, { once: true }); v.currentTime = 0; setTimeout(r, 1500); })));
+    await new Promise((r) => setTimeout(r, 300));
+  });
+  return { context, page };
 }
 
 // Load fonts and lazy media by walking the page once, then return to the top. With motion on, walk at
