@@ -64,8 +64,10 @@ const CLEAR = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAA
 
   <div class:list={["transport", clip.cueKeys && "transport--cues"]} role="group" aria-label={`${p.title} clip controls`} data-transport data-state="ready">
     <button class="tkey" type="button" aria-label={`Play ${p.title} clip`} data-play>
-      <Icon name="player-play" size={24} class="tkey__play" />
-      <Icon name="player-pause" size={24} class="tkey__pause" />
+      {/* One cell, three glyphs: the state crossfades them (global.css), so the key never changes size. */}
+      <Icon name="player-play" size={24} class="tkey__i tkey__i--play" />
+      <Icon name="player-pause" size={24} class="tkey__i tkey__i--pause" />
+      <Icon name="loader-2" size={24} class="tkey__i tkey__i--load" />
     </button>
     <span class="tc"><span data-now>{timecode(clip.t)}</span> / {timecode(clip.duration, false)}</span>
     <span class="state"><Icon name="alert-triangle" size={16} class="state__err" /><span data-word>Ready</span></span>

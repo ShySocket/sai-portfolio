@@ -39,9 +39,11 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* reserved for on-screen movement; none today */
   --t-press: 140ms;
   --t-hover: 150ms;
+  --t-glyph: 150ms; /* the transport key's play, pause and loading glyphs crossfade in one cell */
   --t-state: 180ms;
   --t-tip: 125ms;
   --t-land: 600ms;
+  --t-spin: 700ms; /* one turn of the loading glyph, linear, only while loading */
 
   --display: 'Funnel Display', 'Funnel Display Fallback', Arial, sans-serif;
   --sans: 'Funnel Sans Variable', 'Funnel Sans Fallback', Arial, sans-serif;
@@ -408,9 +410,18 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 @media (hover: hover) and (pointer: fine) {
   .tkey:not([aria-disabled='true']):hover, .cue:not([aria-disabled='true']):hover { background: var(--raise-hover); }
 }
-.tkey__pause { display: none; }
-[data-state='playing'] .tkey__play, [data-state='loading'] .tkey__play { display: none; }
-[data-state='playing'] .tkey__pause, [data-state='loading'] .tkey__pause { display: block; }
+/* Play, pause and loading share the key's one cell and crossfade, so the key never resizes or jumps. The
+   loading glyph turns only while it is shown. */
+.tkey__i {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity var(--t-glyph) var(--ease-out);
+}
+:is([data-state='ready'], [data-state='paused'], [data-state='error']) .tkey__i--play,
+[data-state='playing'] .tkey__i--pause,
+[data-state='loading'] .tkey__i--load { opacity: 1; }
+[data-state='loading'] .tkey__i--load { animation: spin var(--t-spin) linear infinite; }
+@keyframes spin { to { rotate: 1turn; } }
 
 .tc {
   grid-area: tc;
@@ -964,6 +975,8 @@ html:not(.js) .cap { padding-top: 0.75rem; } /* no transport row above it withou
 @media (prefers-reduced-motion: reduce) {
   :where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full):active { transform: none; }
   .tip { scale: 1; transition-property: opacity; }
+  .tkey__i { transition: none; } /* the glyph swaps instantly */
+  [data-state='loading'] .tkey__i--load { animation: none; } /* and the loading glyph holds still */
 }
 
 /* ------------------------------------------------------------------ print: stills, timecodes, outlines */
