@@ -41,7 +41,8 @@ const provenance = clip.provenance;
       aria-label={label}
     ></video>
     {/* The still carries the verbatim label while it is the frame on screen; once the video takes over, the
-        still is hidden and the video's own label is the one exposed, so it is announced once. */}
+        still is hidden and the video's own label is the one exposed, so it is announced once (the caption's
+        copy of it is aria-hidden). */}
     <img
       class="well__still"
       src={`${base}/${clip.still}`}
@@ -100,9 +101,11 @@ const provenance = clip.provenance;
     )}
   </div>
 
-  {/* What is on screen, in plain words (media.label, verbatim), then where the footage comes from. */}
+  {/* What is on screen, in plain words (media.label, verbatim), then where the footage comes from. The label line
+      is the same text as the frame's own name (the still's alt, then the video's aria-label), so it is hidden from
+      assistive tech and the label is announced once; the provenance line is read as usual. */}
   <figcaption class="cap">
-    <p class="cap__label">{label}</p>
+    <p class="cap__label" aria-hidden="true">{label}</p>
     {provenance && (
       <ul class="cap__facts">
         {provenance.facts.map((f) => <li>{f}</li>)}
