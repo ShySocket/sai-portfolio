@@ -4,6 +4,7 @@ import '@fontsource-variable/funnel-sans/wght.css';
 import displayFont from '@fontsource/funnel-display/files/funnel-display-latin-600-normal.woff2?url';
 import sansFont from '@fontsource-variable/funnel-sans/files/funnel-sans-latin-wght-normal.woff2?url';
 import '../styles/global.css';
+import tokens from '../styles/global.css?raw';
 import { presentation } from '../data/presentation';
 import { stillSources } from '../data/stills';
 
@@ -17,6 +18,9 @@ const og = `${canonical}og.png`;
 // The stage still is the LCP: preload the AVIF set its <picture> picks from (the same srcset and sizes, so the
 // response is reused). Browsers without AVIF skip this hint and take the WebP source as usual.
 const stage = await stillSources(presentation.sidequest.clip!);
+// The browser chrome takes the page's own ground, read from the token at build time (no second copy of the hex).
+const ground = /--ground:\s*(#[0-9a-f]{3,8})\b/i.exec(tokens)?.[1];
+if (!ground) throw new Error('Base.astro: --ground token not found in global.css');
 ---
 
 <!doctype html>
@@ -26,10 +30,11 @@ const stage = await stillSources(presentation.sidequest.clip!);
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#eceef0" />
+    <meta name="theme-color" content={ground} />
     <meta name="color-scheme" content="light" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" href={`${base}/favicon.png`} />
+    <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
     <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
     <link rel="preload" href={sansFont} as="font" type="font/woff2" crossorigin />
     <link rel="preload" as="image" type="image/avif" imagesrcset={stage.avif} imagesizes={stage.sizes} fetchpriority="high" />
