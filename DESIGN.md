@@ -47,8 +47,8 @@ typography:
     lineHeight: "20px"
     fontFeature: "tnum"
 rounded:
-  tick: "1px"
-  mark: "4px"
+  tick: "4px"
+  mark: "1px"
   r: "10px"
 spacing:
   "1": "8px"

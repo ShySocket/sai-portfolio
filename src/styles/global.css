@@ -523,8 +523,11 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
   [data-state='loading'] .tkey__i--load { animation: none; }
 }
 
+/* In the wide row the readout keeps 8px clear of the state word when text spacing grows its cell to fit (77 + 8px is
+   under the 88px cell at 100% text, so nothing moves); the narrow rows space the state word themselves. */
 .tc {
   grid-area: tc;
+  padding-right: 0.5rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--on-field);
@@ -653,6 +656,7 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
   }
   .transport--cues .track { margin-inline: 0 0.25rem; }
   .tc, .state { align-self: end; color: var(--on-field-2); }
+  .tc { padding-right: 0; }
   .state { padding-left: 0.5rem; }
   .transport--cues .tc { padding-left: 0.25rem; }
   .track { align-self: center; }
@@ -669,7 +673,7 @@ html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden
   }
   .transport--cues .track { margin-inline: 0 0.25rem; align-self: center; }
   .transport--cues :is(.tc, .state) { align-self: end; color: var(--on-field-2); }
-  .transport--cues .tc { padding-left: 0.25rem; }
+  .transport--cues .tc { padding-inline: 0.25rem 0; }
   .transport--cues .state { padding-left: 0.5rem; }
 }
 /* 200% text on a phone: cells wrap into rows instead of overflowing, still in DOM order (key, previous cue,
