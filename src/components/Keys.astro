@@ -1,0 +1,25 @@
+---
+// The action row at the title: links[0] (play or watch) is the rose primary key; "View code" is secondary.
+import Icon from './Icon.astro';
+import type { Link } from '../data/projects';
+
+interface Props { links: Link[] }
+const { links } = Astro.props;
+const primary = links.filter((l) => l.kind !== 'code');
+const code = links.filter((l) => l.kind === 'code');
+---
+
+{links.length > 0 && (
+  <div class="keys">
+    {primary.map((l) => (
+      <a class="key key--primary" href={l.href} target="_blank" rel="noopener">
+        <span>{l.label}</span><Icon name="arrow-up-right" size={20} /><span class="sr"> (opens in a new tab)</span>
+      </a>
+    ))}
+    {code.map((l) => (
+      <a class="key key--code" href={l.href} target="_blank" rel="noopener">
+        <span>{l.label}</span><Icon name="arrow-up-right" size={16} /><span class="sr"> (opens in a new tab)</span>
+      </a>
+    ))}
+  </div>
+)}

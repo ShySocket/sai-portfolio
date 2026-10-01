@@ -1,0 +1,65 @@
+---
+// ReliefIQ: the three screens as an inventory row with the measured proof regions outlined, then those
+// regions as legible detail crops. Nothing hides behind interaction. DOM order pairs each screen with its
+// crop (the phone order); at >= 768px the screens share one row and the crops the next.
+import { Image, getImage } from 'astro:assets';
+import type { Project } from '../data/projects';
+import { regions } from '../data/presentation';
+import sarlahi from '../assets/crops/sarlahi.png';
+import sarlahiNarrow from '../assets/crops/sarlahi-narrow.png';
+import road from '../assets/crops/road.png';
+import roadNarrow from '../assets/crops/road-narrow.png';
+
+interface Props { project: Project }
+const { project: p } = Astro.props;
+const media = p.media.type === 'images' ? p.media : null;
+
+// Crops are shown at about 1x of the screenshot (never upscaled), so one width each is enough.
+const wide = async (src: ImageMetadata) => getImage({ src, format: 'webp', quality: 84 });
+const narrow = async (src: ImageMetadata) => getImage({ src, format: 'webp', quality: 84, widths: [352, src.width] });
+const crops = {
+  allocation: {
+    wide: await wide(sarlahi),
+    narrow: await narrow(sarlahiNarrow),
+    src: sarlahi,
+    alt: 'Top 5 Best Fit Regions for CARE Nepal. Sarlahi: Match Score 73.7, Urgency 56.5, Fitness 68.1, Damage 89.0%, Population Density 675.3',
+  },
+  volunteer: {
+    wide: await wide(road),
+    narrow: await narrow(roadNarrow),
+    src: road,
+    alt: 'Image Analyzer: a fallen tree across a road; Features Identified: Blocked road by fallen tree, Dense forest surrounding the road',
+  },
+};
+const box = (r: { l: number; t: number; w: number; h: number }) => `--l:${r.l}%;--t:${r.t}%;--w:${r.w}%;--h:${r.h}%`;
+const screen = (i: number) => media!.images[i];
+---
+
+{media && (
+  <figure class="field spread" aria-labelledby={`${p.slug}-title`}>
+    <div class="spread__row spread__screens">
+      <div class="shot shot--1" id="reliefiq-allocation">
+        <Image src={screen(0)} alt={media.alts[0]} widths={[360, 720, 1040]} sizes="(min-width: 1200px) 347px, (min-width: 768px) 30vw, 352px" format="webp" quality={78} loading="lazy" />
+        <span class="outline" style={box(regions.allocation)} data-ring="reliefiq-allocation" aria-hidden="true"></span>
+      </div>
+      <div class="shot shot--2">
+        <Image src={screen(1)} alt={media.alts[1]} widths={[360, 720, 1040]} sizes="(min-width: 1200px) 347px, (min-width: 768px) 30vw, 352px" format="webp" quality={78} loading="lazy" />
+      </div>
+      <div class="shot shot--3" id="reliefiq-volunteer">
+        <Image src={screen(2)} alt={media.alts[2]} widths={[360, 720, 1040]} sizes="(min-width: 1200px) 347px, (min-width: 768px) 30vw, 352px" format="webp" quality={78} loading="lazy" />
+        <span class="outline" style={box(regions.volunteer)} data-ring="reliefiq-volunteer" aria-hidden="true"></span>
+      </div>
+    </div>
+    <div class="spread__row spread__crops">
+      {(['allocation', 'volunteer'] as const).map((k) => {
+        const c = crops[k];
+        return (
+          <picture class={`crop crop--${k}`} data-ring={`reliefiq-${k}`}>
+            <source media="(max-width: 767.98px)" srcset={c.narrow.srcSet.attribute} sizes="352px" type="image/webp" />
+            <img src={c.wide.src} alt={c.alt} width={c.src.width} height={c.src.height} loading="lazy" decoding="async" />
+          </picture>
+        );
+      })}
+    </div>
+  </figure>
+)}

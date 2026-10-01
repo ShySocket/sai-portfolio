@@ -1,26 +1,8 @@
 ---
-import { projects } from '../data/projects';
+// The name and the headline, fully opaque at first paint. "CMU" sits in the same run and weight.
 ---
 
-<section class="hero" id="top">
-  <div class="container">
-    <h1 class="hero__name" data-reveal>Sai Bhandar</h1>
-    <p class="hero__tag" data-reveal><b>Business + CS</b> @ CMU</p>
-
-    <nav class="toc" aria-label="Projects">
-      <ol class="toc__list">
-        {projects.map((p, i) => (
-          <li data-reveal>
-            <a class="toc__row" href={`#${p.slug}`}>
-              <span class="toc__no">{String(i + 1).padStart(2, '0')}</span>
-              <span class="toc__title">{p.title}</span>
-              <span class="toc__kind">
-                {p.kicker.split(' · ').map((k, j) => <span class:list={{ 'toc__extra': j > 1 }}>{j > 0 && ' · '}{k}</span>)}
-              </span>
-            </a>
-          </li>
-        ))}
-      </ol>
-    </nav>
-  </div>
-</section>
+<header class="hero">
+  <h1 class="hero__name">Sai Bhandar</h1>
+  <p class="hero__tag">Business + CS @ CMU</p>
+</header>

@@ -1,0 +1,39 @@
+---
+// One glance order for every family: title, award, tags, keys, summary, notes (with evidence keys).
+import Icon from './Icon.astro';
+import Keys from './Keys.astro';
+import type { Project } from '../data/projects';
+import type { Presentation } from '../data/presentation';
+
+interface Props { project: Project; pres: Presentation }
+const { project: p, pres } = Astro.props;
+---
+
+<div class="entry__text">
+  <h2 class="entry__title" id={`${p.slug}-title`}>{p.title}</h2>
+  {p.award && (
+    <p class="award"><Icon name="award" size={20} class="award__icon" />{p.award}</p>
+  )}
+  <ul class="tags" aria-label={`${p.title} stack`}>
+    {p.tags.map((t) => <li>{t}</li>)}
+  </ul>
+  <Keys links={p.links} />
+  <p class="summary">{p.summary}</p>
+  {p.bullets && (
+    <ul class="notes">
+      {p.bullets.map((b) => {
+        const proof = pres.proofs?.[b.title];
+        return (
+          <li class="note" data-proof={proof?.target}>
+            <p><b>{b.title}.</b> {b.body}</p>
+            {proof && (
+              <a class="evkey" href={`#${proof.target}`}>
+                {proof.icon && <Icon name={proof.icon} size={16} />}{proof.label}
+              </a>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  )}
+</div>

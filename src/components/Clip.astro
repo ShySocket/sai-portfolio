@@ -1,0 +1,100 @@
+---
+// An ink field holding one clip: the well (pinned still over the video) and its fixed-cell transport.
+// Without JS the video keeps native controls and the transport stays out of sight (but its cue anchors
+// keep their boxes, so /#sidequest-4.5 still lands on the field). JS removes the controls and drives it.
+import Icon from './Icon.astro';
+import type { Project } from '../data/projects';
+import { type Clip, cueId, timecode } from '../data/presentation';
+
+interface Props { project: Project; clip: Clip; lcp?: boolean }
+const { project: p, clip, lcp = false } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const label = p.media.label;
+const fallback = p.links[0];
+const cuesId = `${p.slug}-cues`;
+---
+
+<figure
+  class="field clip"
+  aria-labelledby={`${p.slug}-title`}
+  data-clip
+  data-title={p.title}
+  data-dur={clip.duration}
+  data-t={clip.t}
+  data-auto={clip.autoplay ? '' : undefined}
+>
+  <div class="well" data-well>
+    <video
+      class="well__video"
+      src={`${base}/${clip.src}`}
+      poster={`${base}/${clip.still}`}
+      preload="none"
+      muted
+      loop
+      playsinline
+      controls
+      disableremoteplayback
+      width={clip.width}
+      height={clip.height}
+      aria-label={label}
+    ></video>
+    {/* The still carries the verbatim label while it is the frame on screen; once the video takes over, the
+        still is hidden and the video's own label is the one exposed, so it is announced once. */}
+    <img
+      class="well__still"
+      src={`${base}/${clip.still}`}
+      alt={label}
+      width={clip.width}
+      height={clip.height}
+      decoding="async"
+      loading={lcp ? 'eager' : 'lazy'}
+      fetchpriority={lcp ? 'high' : undefined}
+    />
+  </div>
+
+  <div class:list={["transport", clip.cueKeys && "transport--cues"]} role="group" aria-label={`${p.title} clip controls`} data-transport data-state="ready">
+    <button class="tkey" type="button" aria-label={`Play ${p.title} clip`} data-play>
+      <Icon name="player-play" size={24} class="tkey__play" />
+      <Icon name="player-pause" size={24} class="tkey__pause" />
+    </button>
+    <span class="tc"><span data-now>{timecode(clip.t)}</span> / {timecode(clip.duration, false)}</span>
+    <span class="state"><Icon name="alert-triangle" size={16} class="state__err" /><span data-word>Ready</span></span>
+    {/* The cue keys flank the track (previous before it, next after it) at every width, so the tab order
+        (key, previous, ticks, next) is the visual order in the wide row, the narrow row and the 200% layout. */}
+    {clip.cueKeys && (
+      <button class="cue cue--prev" type="button" aria-label="Previous cue" data-cue="-1"><Icon name="player-skip-back" size={20} /></button>
+    )}
+    <div class="track">
+      <div class="lane" id={cuesId} role="toolbar" aria-label={`${p.title} cues`} data-lane>
+        <span class="rail" aria-hidden="true"><span class="fill" data-fill></span></span>
+        {clip.cues.map((c) => {
+          const caption = c.caption || label;
+          const id = cueId(p.slug, c.t);
+          return (
+            <a
+              class="tick"
+              id={id}
+              href={`#${id}`}
+              data-t={c.t}
+              data-ring={id}
+              style={`--x:${(c.t / clip.duration).toFixed(4)}`}
+              tabindex={c.t === clip.t ? 0 : -1}
+            >
+              <span class="tick__mark" aria-hidden="true"></span>
+              <span class="sr">{timecode(c.t)}, {caption}</span>
+              <span class="tip" aria-hidden="true"><span class="tip__t">{timecode(c.t)}</span>{caption}</span>
+            </a>
+          );
+        })}
+      </div>
+      {fallback && (
+        <a class="fallback" href={fallback.href} target="_blank" rel="noopener" hidden>
+          {fallback.label}<Icon name="arrow-up-right" size={16} /><span class="sr"> (opens in a new tab)</span>
+        </a>
+      )}
+    </div>
+    {clip.cueKeys && (
+      <button class="cue cue--next" type="button" aria-label="Next cue" data-cue="1"><Icon name="player-skip-forward" size={20} /></button>
+    )}
+  </div>
+</figure>
