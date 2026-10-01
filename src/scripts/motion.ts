@@ -1,8 +1,10 @@
 // Cue behaviour: clip transports, cue addresses, copy email, landing cue. Everything here enhances markup
 // that already works and is fully visible without it (no-JS clips keep native controls).
+// Each clip and the copy key initialise in their own try/catch: a clip that fails falls back to its no-JS form
+// (native controls over the still), and nothing else on the page is affected.
 
 const d = document;
-const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true;
 const live = d.getElementById('live');
 const HALF_FRAME = 1 / 60;
@@ -30,7 +32,9 @@ const WORD: Record<State, string> = { ready: 'Ready', loading: 'Loading', playin
 /** Tick elements by id, so an address (hash) can reach its clip. */
 const cueById = new Map<string, () => void>();
 
-function clip(fig: HTMLElement) {
+type Player = { arm(): void; still(): void };
+
+function clip(fig: HTMLElement): Player {
   const v = fig.querySelector('video')!;
   const frameLabel = fig.querySelector<HTMLImageElement>('.well__still')!.alt;
   const tr = fig.querySelector<HTMLElement>('[data-transport]')!;
@@ -48,7 +52,7 @@ function clip(fig: HTMLElement) {
   const auto = fig.hasAttribute('data-auto');
 
   let state: State = 'ready';
-  let intent: Intent = auto && !reduce && !saveData ? 'auto' : 'none';
+  let intent: Intent = auto && !reduceMotion.matches && !saveData ? 'auto' : 'none';
   let armed = false; // the first-viewport loop waits for load + idle
   let visible = false;
   let loaded = false;
@@ -195,7 +199,7 @@ function clip(fig: HTMLElement) {
       play();
     }
   });
-  fig.querySelector('[data-well]')!.addEventListener('click', () => key.click());
+  fig.querySelector('[data-well]')!.addEventListener('click', () => !fig.hasAttribute('data-static') && key.click());
   for (const b of [prev, next]) {
     b?.addEventListener('click', () => {
       if (b.getAttribute('aria-disabled') === 'true') return;
@@ -253,7 +257,24 @@ function clip(fig: HTMLElement) {
       armed = true;
       if (intent === 'auto') sync();
     },
+    /** Reduced motion switched on mid-visit: a clip that started on its own stops; one the user started plays on. */
+    still() {
+      if (intent !== 'auto') return;
+      intent = 'none';
+      if (state === 'playing' || state === 'loading') v.pause();
+    },
   };
+}
+
+/** A clip whose set-up failed goes back to its no-JS form: native controls over the still, no transport. */
+function unenhance(fig: HTMLElement) {
+  const v = fig.querySelector('video');
+  if (v) {
+    v.controls = true;
+    v.removeAttribute('aria-label'); // the still beneath keeps the name
+  }
+  fig.classList.remove('is-live');
+  fig.setAttribute('data-static', '');
 }
 
 /** Tooltips (WCAG 1.4.13): 200ms hover delay, instant for 600ms after one closes, immediate on keyboard
@@ -337,8 +358,21 @@ function route() {
 }
 
 function init() {
-  const ctl = [...d.querySelectorAll<HTMLElement>('[data-clip]')].map(clip);
-  copyEmail();
+  const ctl: Player[] = [];
+  for (const fig of d.querySelectorAll<HTMLElement>('[data-clip]')) {
+    try {
+      ctl.push(clip(fig));
+    } catch (e) {
+      unenhance(fig);
+      console.warn('Clip controls unavailable', e);
+    }
+  }
+  try {
+    copyEmail();
+  } catch (e) {
+    console.warn('Copy email unavailable', e);
+  }
+  reduceMotion.addEventListener('change', () => reduceMotion.matches && ctl.forEach((c) => c.still()));
 
   d.addEventListener('click', (e) => {
     const a = (e.target as Element).closest?.('a[href^="#"]') as HTMLAnchorElement | null;

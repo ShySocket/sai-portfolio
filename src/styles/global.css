@@ -365,8 +365,11 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
    on fractional column edges the video's first frame otherwise outranks it by a few px². Ink shows in the 1px. */
 .js .well__video { visibility: hidden; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); }
 .js .is-live .well__video { visibility: visible; }
-.js .well__video::-webkit-media-controls { display: none !important; }
+.js .clip:not([data-static]) .well__video::-webkit-media-controls { display: none !important; }
 .is-live .well__still { visibility: hidden; }
+/* A clip whose controls failed to set up (motion.ts) takes its no-JS form. */
+.js .clip[data-static] .well { cursor: auto; }
+.js .clip[data-static] .well__video { visibility: visible; inset: 0; width: 100%; height: 100%; }
 
 /* Transport: one row of fixed cells aligned to the well. State changes only text inside a cell. */
 .transport {
@@ -383,7 +386,7 @@ html:not(.js) .entry:target .entry__title { animation: land var(--t-land) ease; 
   grid-template-areas: 'key tc state prev track next';
   padding-right: 0.5rem; /* the next-cue key sits 10px from the edge, like the play key */
 }
-html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflow: hidden; }
+html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden; height: 0; min-height: 0; overflow: hidden; }
 
 @supports (width: round(down, 100cqi, 8px)) {
   .well { width: var(--ww); height: var(--wh); aspect-ratio: auto; }
@@ -586,7 +589,7 @@ html:not(.js) .transport { visibility: hidden; height: 0; min-height: 0; overflo
 @supports (width: round(down, 100cqi, 8px)) {
   .cap { width: var(--ww); }
 }
-html:not(.js) .cap { padding-top: 0.75rem; } /* no transport row above it without JS */
+html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no transport row above it */
 /* The list is padded 6px and pulled back by as much, so overflow clips the separator of whichever item
    starts a line (it hangs 9px left) while a focus ring (5px) still fits inside the box. */
 .cap__facts {
