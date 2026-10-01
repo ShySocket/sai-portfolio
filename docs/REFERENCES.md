@@ -1,4 +1,17 @@
-# Design references (light minimalist direction)
+# Design references
+
+## Cue redesign (2026-09-30 to 2026-10-01)
+
+The current design came out of an open redesign run with three installed design skills. The process records (critique brief, directions, variant reports, judge scores, review findings) are in `~/Documents/autopilot/artifacts/sai-portfolio-redesign/`, and the side-by-side review board is the Figma file [Sai Portfolio — Redesign review](https://www.figma.com/design/JmydNmbtTweBBjk4FGxY4C).
+
+| Source | What it contributed |
+|---|---|
+| [pbakaus/impeccable](https://github.com/pbakaus/impeccable) (critique, audit, new-work, craft floor, polish, detector) | The critique of the light-minimal site, PRODUCT.md, the concept-seed roll (key c815bbd6) that assigned the Cue direction and dealt six challengers, the craft floor every pass was built against, and the `impeccable detect` gate. |
+| [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) (design-taste-frontend, redesign-existing-projects) | The anti-template audit and the pre-flight check used by the critique, the judges and the final review. |
+| [emilkowalski/skills](https://github.com/emilkowalski/skills) (emil-design-eng, animate, review-animations, improve-animations) | The motion and interaction bar: one ease-out token set, UI motion at or under 200 ms, press feedback, hover only on fine pointers, no content hidden by motion, and the motion inventory in the 7c pass. |
+| Runner-up variants `variant/screening-room` and `variant/signal-flow` | Grafted into Cue: action keys tiered by evidence type, the clip caption and provenance line, the glyph crossfade (Screening Room); the Sidequest pipeline flow, AVIF picture stills, per-clip isolation and the build-time verbatim check (Signal Flow). |
+
+## Light minimalist direction (superseded 2026-09-30)
 
 Collected 2026-09-26. Every URL below returned HTTP 200 on that date. What each contributes is listed; nothing was copied or installed from these sources.
 
