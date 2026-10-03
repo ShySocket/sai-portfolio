@@ -1,0 +1,13 @@
+---
+// The award line: a 16px medal in the accent, then the award in Meta at 600 (global.css .award).
+import Icon from './Icon.astro';
+import type { Copy } from '../../data/case-studies';
+import { tie } from '../../lib/text';
+
+interface Props {
+  award: Copy;
+}
+const { award } = Astro.props;
+---
+
+<p class="award"><Icon name="medal" /><span data-verbatim={award.from}>{tie(award.text)}</span></p>

@@ -1,15 +1,13 @@
-import type { ImageMetadata } from 'astro';
-import relief1 from '../assets/relief-1.jpg';
-import relief2 from '../assets/relief-2.jpg';
-import relief3 from '../assets/relief-3.jpg';
-import lazerHome from '../assets/lazer-home.png';
+// Confirmed project copy (PRODUCT.md: ask Sai before changing any of it). The pages take every image, video and QR
+// file from src/data/case-studies.ts (src/assets/v3/, public/media/v3/), so media here keeps only confirmed words:
+// the media label, the alt of each screen and the link the QR encodes.
 
 export type Link = { label: string; href: string; kind: 'play' | 'code' | 'watch' };
 
 export type Media =
-  | { type: 'video'; src: string; poster: string; label: string }
-  | { type: 'images'; images: ImageMetadata[]; alts: string[]; label: string }
-  | { type: 'phone'; images: ImageMetadata[]; alts: string[]; qr: string; qrHref: string; label: string };
+  | { type: 'video'; label: string }
+  | { type: 'images'; alts: string[]; label: string }
+  | { type: 'phone'; alts: string[]; qrHref: string; label: string };
 
 export type Project = {
   slug: string;
@@ -51,8 +49,6 @@ export const projects: Project[] = [
     ],
     media: {
       type: 'video',
-      src: 'media/sidequest.mp4',
-      poster: 'media/sidequest-poster.webp',
       label: 'Sidequest gameplay: a character runs over real street footage, jumping cars and hedges',
     },
   },
@@ -83,9 +79,7 @@ export const projects: Project[] = [
     ],
     media: {
       type: 'phone',
-      images: [lazerHome],
       alts: ['Lazer Shooter home screen: create a room or join one'],
-      qr: 'media/lazer-qr.svg',
       qrHref: 'https://lazer-shooter-game.vercel.app',
       label: 'Lazer Shooter screenshots',
     },
@@ -111,7 +105,6 @@ export const projects: Project[] = [
     links: [],
     media: {
       type: 'images',
-      images: [relief1, relief2, relief3],
       alts: ['ReliefIQ allocation dashboard', 'ReliefIQ regional match-score map', 'ReliefIQ volunteer daily plan'],
       label: 'ReliefIQ screenshots',
     },
@@ -136,8 +129,6 @@ export const projects: Project[] = [
     links: [{ label: 'Watch on YouTube', href: 'https://www.youtube.com/watch?v=KXLkp3JwIjw', kind: 'watch' }],
     media: {
       type: 'video',
-      src: 'media/sunrise.mp4',
-      poster: 'media/sunrise-poster.webp',
       label: 'Sunrise VR: procedurally generated floors of a dense city',
     },
   },
@@ -151,8 +142,6 @@ export const projects: Project[] = [
     links: [{ label: 'Watch on YouTube', href: 'https://www.youtube.com/watch?v=bmcWOpWB1DQ', kind: 'watch' }],
     media: {
       type: 'video',
-      src: 'media/gyroblaster.mp4',
-      poster: 'media/gyroblaster-poster.webp',
       label: 'GyroBlaster gameplay: two ships controlled by phone gyroscopes',
     },
   },

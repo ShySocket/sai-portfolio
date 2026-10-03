@@ -1,1177 +1,1368 @@
-/* Cue: a light instrument face with ink displays cut into it.
-   Light means read or press. Ink means this plays or proves. Rose lights only what is live or was just pressed.
-   Everything is opaque by default; nothing enters on scroll. One 8px lattice (4px line sub-step). */
+/* Sai Bhandar portfolio v3, direction B "Editorial". The frozen system; DESIGN.md is its prose.
+
+   Paper white, true black ink, one signal orange. Schibsted Grotesk (display and interface) over Newsreader
+   (reading text). One 12 column grid (8 under 1024, 4 under 640), every left edge on a column line, every
+   corner square. Rules carry the structure: a 2px ink rule under the name and over the footer, 1px ink rules
+   opening each section, hairlines between items. Nothing moves on its own except the home row 1 loop; every other
+   change answers the visitor: colour fades of 150ms, presses that scale to .97 (.99 for a whole row), a 200ms fade
+   from poster to video. The Motion section near the end holds the presses and the reduced-motion rules.
+
+   Class contract (pages compose these; component <style> blocks may add internals but never new tokens):
+     page        .wrap (container with margins)  .grid (column grid)  .vh (visually hidden)
+     home        .masthead > .nameplate.display, .masthead__rule, .deck.grid > (.deck__intro > .tagline, .about),
+                 .contact.contact--deck
+                 .work > .work__item > .work__body.grid > .frame.work__media, .work__caption (row 1: .play),
+                 .work__text > .work__title, .work__claim, .work__meta, .award, .links.work__links > .work__case
+     case        header.wrap > .site-header > .site-header__name, .contact.contact--header
+                 .intro.grid > .title.display, .award, .intro__rule, .lede, .facts > dl > .facts__row > dt + dd
+                 (.facts__links, .btn, .qr), .figure.hero (.hero--figure for the Figure slot exception)
+                 .section > .section__head, .section__body > (.prose, .sub > .sub__head, .figure, .strip, .table)
+                 .section.next > .next__title, .next__claim, .links
+     shared      .frame (.frame--screens, .frame--tall, [data-video] with .is-live / .is-static), .figure
+                 (.figure--wide), .caption, .play (PlayButton.astro), .strip,
+                 .award, .links, .btn, .meta, .chart
+     footer      footer.footer.wrap > .contact.contact--footer
+   Slot widths and `sizes` strings for every image live in src/styles/slots.ts. */
 
 /* ------------------------------------------------------------------ tokens */
 :root {
-  --ground: #eceef0;
-  --ink: #15171a; /* 15.44:1 on ground */
-  --ink-2: #4b5157; /* 6.91:1 on ground, 6.29:1 on hover-tint */
-  --hover-tint: #e1e4e7; /* ink 14.07:1 */
-  --on-field: #e9ecef; /* 15.14:1 on ink, 12.31:1 on raise */
-  --on-field-2: #a4abb2; /* 7.74:1 on ink, 6.29:1 on raise */
-  --raise: #26292e;
-  --raise-hover: #30343a; /* on-field 10.55:1 */
-  --track: #6b7279; /* 3.68:1 on ink */
-  --ring-field: rgba(233, 236, 239, 0.14);
-  --rose: #c42b5f; /* 4.68:1 ground, 3.30:1 ink, 2.68:1 raise, 1.12:1 track (so the fill is ink-edged) */
-  --rose-press: #a82350; /* white 6.95:1 */
-  --on-rose: #fff; /* 5.44:1 on rose */
-  --selection: #e5cbd6; /* ink 11.84:1 */
+  /* Colour. One light theme: recruiters read on laptops in daylight. Ratios measured against paper. */
+  --paper: #fafaf8;
+  --panel: #ecece8; /* media letterbox and empty frames */
+  --ink: #0b0b0b; /* 18.83:1 paper, 16.62:1 panel */
+  --ink-2: #55554f; /* 7.18:1 paper, 6.34:1 panel: meta, captions, labels */
+  --rule: var(--ink); /* structural rules: name, sections, footer */
+  --hair: rgba(11, 11, 11, 0.14); /* #d9d9d7 on paper; decorative separators between items */
+  --img-edge: rgba(11, 11, 11, 0.08); /* the 1px inner edge that keeps light media off the paper */
+  --accent: #f0480e; /* graphics only: underlines, focus ring (3.56:1), award mark, button fill (ink on it 5.28:1) */
+  --accent-ink: #b83200; /* the accent as text, e.g. a hovered link: 5.75:1 paper, 5.07:1 panel */
+  --accent-tint: #f8d3c5; /* text selection; ink on it 14.17:1 */
+  --focus: var(--accent);
+  --chart-1: #3d3d3a; /* chart greys, darkest to lightest: data bands and series, never text */
+  --chart-2: #74746f;
+  --chart-3: #9b9b96;
+  --chart-4: #afafaa;
+  --chart-5: #c9c9c4;
 
-  --u: 0.5rem;
-  --r: 10px;
-  --margin: 1rem;
-  --gutter: 2rem;
-  --content: 100rem; /* 1600px */
-  --measure: 58ch; /* 72-75 characters of Funnel Sans per line at 17px */
-  --field-max: 70rem; /* 1120px */
-  --well-max: 72rem; /* 1152px, the stage only */
-  --entry-gap: 5rem;
-  /* Distance from the viewport edge to the content edge. cqw resolves against the page container (body). */
-  --edge: max(var(--margin), (100cqw - var(--content)) / 2);
-  /* A well is a whole number of lattice units wide, 16:9 rounded to the lattice (crops <= 0.9%). These
-     resolve against the nearest field (container "clip"), wherever they are used. */
-  --ww: min(round(down, 100cqi, 8px), var(--well-max));
-  --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
+  /* Faces. --font-display and --font-text come from Astro's Fonts API (astro.config.mjs) with metric-matched
+     fallbacks; the second values only apply where that stylesheet is missing. */
+  --face-display: var(--font-display, 'Schibsted Grotesk', Arial, sans-serif);
+  --face-text: var(--font-text, 'Newsreader', 'Times New Roman', serif);
 
-  /* Motion. Every transition and animation on the page uses these tokens (inventory: polish-7c/motion-inventory.md).
-     Only transform and opacity move; colour changes fade. Nothing enters on scroll and nothing is hidden at first
-     paint. Seeks, cue steps, jumps and focus are instant. */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* press, tooltip, state crossfades; the page's only curve */
-  --ease-colour: ease; /* hover and colour fades */
-  --t-press: 140ms; /* :active scale .97 */
-  --t-hover: 150ms; /* hover fills, rings and underline colour, in step */
-  --t-state: 150ms; /* one cell, two labels: copy key labels, transport glyphs */
-  --t-tip: 125ms;
-  --t-land: 600ms; /* the landing cue: a colour fade on the landed title after an instant jump, never movement */
-  --t-spin: 700ms; /* one turn of the loading glyph, linear, only while loading */
+  /* Type roles (size / line height / tracking). Fluid between 390 and 1440. */
+  --fs-display: clamp(2.5rem, 0.25rem + 10.9vw, 10rem); /* 40 to 160: case study titles */
+  --lh-display: 0.9;
+  --fs-headline: clamp(2.25rem, 1.2rem + 3.4vw, 4rem); /* 36 to 64: row titles, next title, footer contact */
+  --lh-headline: 1;
+  --fs-title: clamp(1.375rem, 1.125rem + 0.4167vw, 1.5rem); /* 22 to 24: tagline, section heads, deck contact */
+  --lh-title: 1.3333;
+  --fs-lede: clamp(1.25rem, 1.15rem + 0.35vw, 1.375rem); /* 20 to 22: About, claims, ledes */
+  --lh-lede: 1.4545; /* 32px at 22 */
+  --fs-body: clamp(1.125rem, 1.07rem + 0.2vw, 1.1875rem); /* 18 to 19: prose */
+  --lh-body: 1.5789; /* 30px at 19 */
+  --fs-ui: 1rem; /* links, facts values, header, button */
+  --lh-ui: 1.5;
+  --fs-meta: 0.9375rem; /* 15: the smallest text on the site */
+  --lh-meta: 1.4667; /* 22px */
+  --track-display: -0.04em;
+  --track-headline: -0.035em;
+  --track-title: -0.015em;
 
-  --display: 'Funnel Display', 'Funnel Display Fallback', Arial, sans-serif;
-  --sans: 'Funnel Sans Variable', 'Funnel Sans Fallback', Arial, sans-serif;
+  /* Space: one scale, 4px base. */
+  --s-1: 0.25rem; /* 4 */
+  --s-2: 0.5rem; /* 8 */
+  --s-3: 0.75rem; /* 12 */
+  --s-4: 1rem; /* 16 */
+  --s-5: 1.5rem; /* 24 */
+  --s-6: 2rem; /* 32 */
+  --s-7: 3rem; /* 48 */
+  --s-8: 4rem; /* 64 */
+  --s-9: 6rem; /* 96 */
+  --s-10: 8rem; /* 128 */
+  --section: var(--s-8); /* between case study sections; 96 from 1024 */
+  --row-pad: var(--s-6); /* above and below each home row; 40 from 640, 48 from 1024 */
+  --masthead-top: var(--s-5);
+
+  /* Grid. px, not rem: the slots are image widths (src/styles/slots.ts), so they must not grow with text zoom. */
+  --cols: 4;
+  --margin: 16px;
+  --gutter: 16px;
+  --container: 1128px; /* 12 x 72 + 11 x 24; reached at a 1224 viewport */
+  --margin-l: max(var(--margin), env(safe-area-inset-left));
+  --margin-r: max(var(--margin), env(safe-area-inset-right));
+  --measure: 34.5rem; /* 552px: prose, captions and ledes never run wider (about 60 characters) */
+
+  /* Shape and motion. */
+  --radius: 0;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); /* presses, the poster fade, the page morph */
+  --ease-colour: ease; /* colour fades */
+  --dur-colour: 150ms; /* hover and press colour, underline colour, button fill */
+  --dur-press: 160ms; /* :active scale .97 (.99 for a row) */
+  --dur-state: 200ms; /* poster to video fade */
+  --dur-move: 200ms; /* the page view transition's media morph; nothing runs longer than 200ms */
 
   color-scheme: light;
-  accent-color: var(--rose);
-  caret-color: var(--rose);
-  scrollbar-color: var(--ink-2) var(--ground);
+  accent-color: var(--accent);
+  caret-color: var(--accent);
+  scrollbar-color: var(--ink-2) var(--paper);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
-@media (min-width: 768px) {
-  :root { --margin: 2rem; --entry-gap: 6rem; }
-}
-@media (min-width: 1200px) {
-  :root { --entry-gap: 8rem; }
-}
-
-@font-face { font-family: 'Funnel Display Fallback'; src: local('Arial'); size-adjust: 99.7%; }
-@font-face { font-family: 'Funnel Sans Fallback'; src: local('Arial'); size-adjust: 101.8%; }
-
-/* ------------------------------------------------------------------ base */
-*, *::before, *::after { box-sizing: border-box; }
-
-html { background: var(--ground); }
-
-body {
-  margin: 0;
-  container: page / inline-size;
-  background: var(--ground);
-  color: var(--ink);
-  font: 400 1.0625rem/1.75rem var(--sans); /* 17/28 */
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-wrap: break-word;
-  -webkit-tap-highlight-color: transparent;
-}
-
-h1, h2, p, ul, ol, figure { margin: 0; }
-ul, ol { padding: 0; list-style: none; }
-img, video, svg { display: block; }
-img, video { max-width: 100%; }
-b { font-weight: 600; }
-a { color: inherit; }
-button { font: inherit; color: inherit; margin: 0; }
-h1, h2 { text-wrap: balance; }
-p, li { text-wrap: pretty; }
-
-::selection { background: var(--selection); color: var(--ink); }
-.field ::selection { background: var(--rose); color: var(--on-rose); }
-
-.sr {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
-}
-
-.icon { flex: none; }
-/* Icons are drawn at their px size at 100% text and restated in rem here, so with 200% text they grow with the
-   labels beside them instead of staying 16-24px. */
-.icon[width='16'] { width: 1rem; height: 1rem; }
-.icon[width='20'] { width: 1.25rem; height: 1.25rem; }
-.icon[width='24'] { width: 1.5rem; height: 1.5rem; }
-
-/* Focus: 2px rose, offset 2px. Inside ink fields the rose sits on ink with a 1px on-field outer ring
-   (rose on ink is 3.30:1, the outer ring 15.14:1), and never touches a --raise key. */
-:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
-.field :focus-visible {
-  outline: 2px solid transparent; /* forced-colors keeps a ring */
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px var(--rose), 0 0 0 5px var(--on-field);
-}
-
-/* Every pressable answers within a frame: scale .97 while pressed (links inside running text excepted; there are
-   none today). Hover fills live in (hover: hover) and (pointer: fine) blocks; the same fill also shows while pressed,
-   so touch and reduced motion still get a colour answer. A cue tick is the one exception to the scale: .97 of its
-   24px box is a third of a pixel, and it would shrink the open tooltip inside it, so its mark turns rose instead. */
-:where(.key, .copy, .tkey, .cue, .tick, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a) {
-  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) var(--ease-colour),
-    text-decoration-color var(--t-hover) var(--ease-colour);
-  touch-action: manipulation;
-}
-/* The outlined keys' 1px ring darkens with their fill, in step (colour only: the ring never moves). Their focus
-   ring is an outline, so focus stays instant. */
-:where(.key--watch, .copy, .evkey, .qr) {
-  transition: transform var(--t-press) var(--ease-out), background-color var(--t-hover) var(--ease-colour),
-    box-shadow var(--t-hover) var(--ease-colour);
-}
-:where(.key, .copy, .tkey, .cue, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
-  transform: scale(0.97);
-}
-/* Wide surfaces press at .99: at .97 a 923px index row or the display-size address pulls each edge in ~14px. */
-:where(.row, .close__mail a):active { transform: scale(0.99); }
-[aria-disabled='true']:active { transform: none; }
-@media (prefers-reduced-motion: reduce) {
-  :where(.key, .copy, .tkey, .cue, .row, .evkey, .qr, .nav__link, .nav__name, .foot__top, .fallback, .cap__full, .close__mail a):active {
-    transform: none; /* the press keeps its fill or underline (below), drops the scale */
+@media (min-width: 640px) {
+  :root {
+    --cols: 8;
+    --margin: 32px;
+    --gutter: 24px;
+    --row-pad: 2.5rem; /* 40 */
+    --masthead-top: var(--s-6);
   }
 }
 
-/* ------------------------------------------------------------------ frame */
-.wrap {
-  width: min(100% - 2 * var(--margin), var(--content));
-  margin-inline: auto;
+@media (min-width: 1024px) {
+  :root {
+    --cols: 12;
+    --margin: 48px;
+    --section: var(--s-9);
+    --row-pad: var(--s-7);
+    --masthead-top: 2.5rem; /* 40 */
+  }
 }
 
-/* ------------------------------------------------------------------ nav */
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0 1rem;
-  min-height: 3.5rem; /* 56 */
-}
-.nav__name {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  font-weight: 600;
-  /* Unmarked at rest (it is the name, not a link in a line); hover and press draw the nav link's underline. */
-  text-decoration: underline 1px transparent;
-  text-underline-offset: 4px;
-}
-.nav__right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
-.nav__link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  font: 500 0.875rem/1.25rem var(--sans);
-  text-decoration: underline 1px;
-  text-underline-offset: 4px;
-}
-/* The address as text beside the copy key, where the row has room: one click selects all of it. */
-.nav__mail {
-  display: none;
-  font: 500 0.875rem/1.25rem var(--sans);
-  color: var(--ink-2);
-  user-select: all;
-  -webkit-user-select: all;
-}
-.nav__contact { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
-@media (min-width: 768px) {
-  .nav__mail { display: inline; }
-  .nav__right { column-gap: 1.5rem; } /* the address and its key group at 12px; Projects stands 24px off */
+/* ------------------------------------------------------------------ base */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-/* ------------------------------------------------------------------ keys */
-.key {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  text-decoration: none;
+html {
+  background: var(--paper);
+  scroll-padding-top: var(--s-6);
 }
-/* Tiered by evidence: a live build is the filled rose key, a recording the outlined key at the same size. */
-.key--lead {
-  min-height: 3rem; /* 48 */
-  max-width: 100%;
-  padding: 0.5rem 1.25rem 0.5rem 1.5rem;
-  border-radius: var(--r);
-  font: 600 1.0625rem/1.75rem var(--sans);
-}
-.key--play { background: var(--rose); color: var(--on-rose); }
-.key--watch { box-shadow: inset 0 0 0 1px var(--ink-2); color: var(--ink); }
-.key--code {
-  min-height: 2.75rem; /* 44 */
-  gap: 0.25rem;
-  font: 500 1.0625rem/1.75rem var(--sans);
-  text-decoration: underline 1px color-mix(in srgb, var(--ink) 40%, transparent);
-  text-underline-offset: 6px;
-}
-.key--code .icon { color: var(--ink-2); }
 
-.copy {
-  display: inline-grid;
-  align-items: center;
-  height: 2.75rem; /* 44 */
-  padding: 0 0.875rem;
-  border: 0;
-  border-radius: var(--r);
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--ink-2);
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--paper);
   color: var(--ink);
-  font: 500 0.875rem/1.25rem var(--sans);
-  text-decoration: none;
+  font-family: var(--face-text);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-kerning: normal;
+  font-synthesis: none; /* no italic files ship: a fake oblique is worse than upright */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: break-word;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--face-display);
+  font-weight: 800;
+  text-wrap: balance;
+}
+
+p,
+li,
+dd,
+figcaption {
+  text-wrap: pretty;
+}
+
+/* :where() keeps these resets at zero specificity, so any component class sets its own margin. */
+:where(ul[class], ol[class]) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+img,
+picture,
+video,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+hr {
+  height: 0;
+  margin: 0;
+  border: 0;
+  color: inherit;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
   cursor: pointer;
-}
-.copy--lg { height: 3rem; padding: 0 1.125rem; font: 500 1.0625rem/1.75rem var(--sans); }
-.copy__stack { display: grid; }
-/* The labels crossfade (opacity only, so reduced motion keeps it); the hidden one leaves the a11y tree once faded. */
-.copy__l {
-  grid-area: 1 / 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  white-space: nowrap;
-  transition: opacity var(--t-state) var(--ease-out), visibility var(--t-state);
-}
-.copy__nojs, .copy__js { display: inline-flex; align-items: center; gap: 0.5rem; }
-.copy__l--done, .copy__l--fail { opacity: 0; visibility: hidden; }
-.copy[data-state='done'] .copy__l--idle, .copy[data-state='fail'] .copy__l--idle { opacity: 0; visibility: hidden; }
-.copy[data-state='done'] .copy__l--done, .copy[data-state='fail'] .copy__l--fail { opacity: 1; visibility: visible; }
-.js .copy__nojs, html:not(.js) .copy__js { display: none; }
-.copy__short { display: none; }
-@media (max-width: 399.98px) {
-  .copy--nav .copy__long { display: none; }
-  .copy--nav .copy__short { display: inline; }
-  .nav__right { gap: 0.5rem 0.75rem; }
-}
-/* The closing key shortens the same way once its column is under 10rem (320px with 200% text), where the icon and
-   the long label, both in rem, no longer fit beside each other. */
-@container (width < 10rem) {
-  .copy--lg .copy__long { display: none; }
-  .copy--lg .copy__short { display: inline; }
+  touch-action: manipulation;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .key--play:hover { background: var(--rose-press); }
-  .key--watch:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-  .key--code:hover { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
-  .nav__link:hover { text-decoration-thickness: 2px; }
-  .nav__name:hover { text-decoration-color: var(--ink); }
-  .copy:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-}
-.key--play:active { background: var(--rose-press); }
-.key--watch:active, .copy:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-.key--code:active { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
-.nav__link:active { text-decoration-thickness: 2px; }
-.nav__name:active { text-decoration-color: var(--ink); }
-
-/* ------------------------------------------------------------------ hero */
-.band { padding-top: 1rem; }
-/* The name is capped by its own column (cqi of .hero), so "Bhandar" never breaks mid-word: 200% text at
-   320px, or the four-column cell at 1200px. At 100% text the cap never binds. */
-.hero { container-type: inline-size; }
-.hero__name {
-  font: 600 min(3rem, 24cqi) / 1.1667 var(--display); /* 48/56 below 768 */
-  letter-spacing: -0.02em;
-}
-.hero__tag {
-  margin-top: 0.5rem;
-  font: 500 1.5rem/2rem var(--sans); /* 24/32, one run: CMU at equal weight */
-}
-@media (min-width: 768px) {
-  .band { padding-top: 2.5rem; }
-  .hero__name { font-size: min(4rem, 24cqi); line-height: 1; } /* 64/64 */
+/* Touch presses answer with the site's own :active colours (Motion), not the browser's grey flash. */
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ------------------------------------------------------------------ entry text */
-.entry { scroll-margin-top: 1.5rem; }
-/* Titles are capped by their own column too ("GyroBlaster" at 200% text on a phone stays whole). */
-.entry__head { container-type: inline-size; }
-.entry__title {
-  font: 600 min(2.5rem, 17cqi) / 1.2 var(--display); /* 40/48 */
-  letter-spacing: -0.01em;
-  text-decoration: underline 2px transparent;
-  text-underline-offset: 6px;
+/* No tabular figures anywhere: Schibsted Grotesk's tnum also sets the period, comma and colon on the figure
+   width, which opens holes in "1.54 m/s" and in comma lists. */
+table {
+  border-collapse: collapse;
 }
-@media (max-width: 767.98px) {
-  .entry__title { font-size: min(2rem, 17cqi); line-height: 1.25; } /* 32/40, so the 48/56 name outranks it */
-}
-/* The claim: the first note's title, verbatim, directly under the title so it is in the first glance. */
-.claim { margin-top: 0.5rem; max-width: var(--measure); font-weight: 600; }
-/* Landing cue: after an instant jump to a project, its title's underline fades from rose. A one-shot colour fade (a
-   keyframe, restarted by motion.ts on a repeat jump; nothing to reverse), so reduced motion keeps it. */
-@keyframes land { from { text-decoration-color: var(--rose); } to { text-decoration-color: transparent; } }
-.js .entry.is-landing .entry__title,
-html:not(.js) .entry:target .entry__title { animation: land var(--t-land) var(--ease-colour); }
 
-.award {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  font: 600 0.875rem/1.25rem var(--sans);
+em,
+i,
+cite {
+  font-style: normal;
+  font-weight: 500;
 }
-.award__icon, .row__kind--award { color: var(--rose); }
 
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 1rem;
-  margin-top: 0.5rem;
-  font: 500 0.875rem/1.25rem var(--sans);
-  color: var(--ink-2);
-}
-.keys {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem 1.5rem;
-  margin-top: 1.5rem;
-}
-.entry__body { margin-top: 2rem; } /* after the proof; 24px where it continues straight under the head */
-.summary { max-width: var(--measure); }
-.notes { display: grid; gap: 1.5rem; margin-top: 1.5rem; max-width: var(--measure); }
-.note { display: grid; gap: 0.5rem; }
-.evkey {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-height: 1.75rem; /* 28 */
-  padding: 0.25rem 0.625rem;
-  border-radius: var(--r);
-  box-shadow: inset 0 0 0 1px var(--ink-2);
-  font: 500 0.875rem/1.25rem var(--sans);
-  text-decoration: none;
-}
-.evkey .icon { color: var(--ink-2); }
-@media (hover: hover) and (pointer: fine) {
-  .evkey:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-}
-.evkey:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-
-@container page (width < 18rem) {
-  .key--lead { white-space: normal; text-align: center; }
-}
-@media (max-width: 767.98px) {
-  .keys .key--lead { width: 100%; justify-content: center; }
-}
-.entry__head + :is(.clip, .phone, .spread) { margin-top: 2rem; }
-
-/* Flow: the first note's chain as an ordered list, inside the body directly under the notes (so it follows them and
-   precedes the index at every width). Ink chips are what plays (footage in, level out); the steps between are text
-   on the face, every node 40px tall so the arrows meet them at mid-height. Parallel parts hang from their step on a
-   1px hairline. Vertical by default, its arrow shafts on the text edge; horizontal once the list has 52rem of its own
-   (a full-width body from about 896px), so the text rail, 200% text and narrow columns keep the vertical form. */
-.flow { container: flow / inline-size; margin-top: 2.5rem; }
-.flow__list { display: grid; justify-items: start; }
-.flow__step { display: grid; justify-items: start; }
-.flow__node {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.5rem; /* 40 */
-  padding: 0.375rem 0.75rem;
+strong,
+b {
   font-weight: 600;
 }
-.flow__arrow { margin: 0.25rem 0 0.25rem 0.125rem; color: var(--ink-2); } /* shaft on the text edge, 12px in */
-.flow__parts {
-  display: grid;
-  gap: 0.25rem;
-  margin: 0.25rem 0 0.25rem 0.75rem;
-  padding: 0.125rem 0 0.125rem 0.75rem;
-  border-left: 1px solid color-mix(in srgb, var(--ink) 32%, transparent);
-  font: 500 0.875rem/1.25rem var(--sans);
+
+code,
+kbd,
+samp {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  letter-spacing: -0.01em;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------------ browser surfaces */
+::selection {
+  background: var(--accent-tint);
+  color: var(--ink);
+}
+
+/* A video's native controls live in its shadow tree, where the host never matches :focus-visible, so the ring
+   goes on the video while any of its controls has focus. */
+:focus-visible,
+video:focus-within {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ links */
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: max(2px, 0.06em);
+  text-underline-offset: 0.24em;
+  text-decoration-skip-ink: auto;
+  transition:
+    color var(--dur-colour) var(--ease-colour),
+    text-decoration-color var(--dur-colour) var(--ease-colour);
+}
+
+/* The press answer, for every pointer: the hover colours (fine pointers only, see Hover) while the link is held. */
+a:active {
+  color: var(--accent-ink);
+  text-decoration-color: var(--accent-ink);
+}
+
+/* ------------------------------------------------------------------ type roles */
+.display {
+  font-family: var(--face-display);
+  font-weight: 800;
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--track-display);
+  text-box: trim-both cap alphabetic;
+}
+
+.meta,
+.work__meta,
+.caption,
+.facts dt {
+  font-family: var(--face-display);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-meta);
+  font-weight: 500;
   color: var(--ink-2);
 }
-/* Horizontal: every arrow sits 12px from the visible edge on both sides (a chip's edge, or a text node's first and
-   last letter), and the parts hang below their step inside its width (contain: they no longer widen the step and
-   push the next arrow away), wrapping where they must. */
-@container flow (width >= 52rem) {
-  .flow__list { grid-auto-flow: column; justify-content: start; align-items: start; }
-  .flow__step { grid-template-columns: auto auto; align-items: start; }
-  .flow__arrow { grid-row: 1; margin: 0.625rem 0.75rem 0; rotate: -90deg; }
-  .flow__node, .flow__parts { grid-column: 2; }
-  .flow__node:not(.field) { padding-inline: 0; }
-  .flow__parts { justify-self: stretch; contain: inline-size; gap: 0.5rem; margin-left: 0; text-wrap: balance; }
+
+.vh {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* ------------------------------------------------------------------ fields (ink, cut into the face) */
-.field {
-  background: var(--ink);
-  color: var(--on-field);
-  border-radius: var(--r);
-}
-
-.clip {
-  container: clip / inline-size;
-  display: grid;
-  justify-items: center;
-  max-width: var(--field-max);
-  overflow: clip; /* the rounded ink edge clips the well corners */
-}
-.well {
-  position: relative;
+/* ------------------------------------------------------------------ grid */
+.wrap {
   width: 100%;
+  max-width: calc(var(--container) + var(--margin-l) + var(--margin-r));
+  margin-inline: auto;
+  padding-inline: var(--margin-l) var(--margin-r);
+}
+
+.grid,
+.section {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+
+/* ------------------------------------------------------------------ contact rows */
+.contact {
+  font-family: var(--face-display);
+  font-weight: 600;
+}
+
+.contact a {
+  display: inline-block; /* the line box is the hit area: 32px in the deck, 24px in the header */
+}
+
+/* ------------------------------------------------------------------ home: masthead */
+.masthead {
+  container-type: inline-size; /* 100cqi is the measure, so the name is set to it exactly */
+  padding-top: var(--masthead-top);
+}
+
+/* The name's ink is 5.652em wide in Schibsted Grotesk 800 at -0.04em (measured in Chrome), and starts 0.018em
+   right of its origin. Pull it back by that bearing and size it so the ink spans the measure, less a hair. */
+.nameplate {
+  font-size: calc(100cqi / 5.66);
+  line-height: 0.86;
+  margin-inline-start: -0.018em;
+}
+
+.masthead__rule {
+  border-top: 2px solid var(--rule);
+  margin-top: var(--s-4);
+}
+
+.deck {
+  padding-top: var(--s-5);
+  row-gap: var(--s-5);
+}
+
+.deck__intro {
+  grid-column: 1 / -1;
+}
+
+.tagline {
+  font-family: var(--face-display);
+  font-weight: 700;
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--track-title);
+  text-wrap: balance;
+}
+
+.about {
+  font-size: var(--fs-lede);
+  line-height: var(--lh-lede);
+  max-width: var(--measure);
+  margin-top: var(--s-1);
+}
+
+.contact--deck {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s-5);
+  font-size: var(--fs-title);
+  line-height: 2rem;
+  letter-spacing: var(--track-title);
+}
+
+@media (min-width: 640px) {
+  .masthead__rule { margin-top: var(--s-5); }
+  .deck { padding-top: var(--s-6); }
+  .deck__intro { grid-column: 1 / 8; }
+}
+
+@media (min-width: 1024px) {
+  /* Intro on the media columns, contact on the row text columns, one 32px line grid across both. */
+  .deck { row-gap: 0; }
+  .deck__intro { grid-column: 1 / 7; }
+  .tagline { line-height: 2rem; }
+  /* 0.15em sets Newsreader's baselines on the Schibsted links' (measured: within 1px at 1024 and 1440). */
+  .about { margin-top: 0; padding-top: 0.15em; line-height: 2rem; }
+  .contact--deck {
+    grid-column: 8 / -1;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ------------------------------------------------------------------ home: work rows */
+.work {
+  margin-top: var(--s-7);
+  border-top: 1px solid var(--rule);
+}
+
+/* The item carries the padding and the hairline; the body is the row a press scales (Motion). */
+.work__item {
+  padding-block: var(--row-pad);
+}
+
+.work__item + .work__item {
+  border-top: 1px solid var(--hair);
+}
+
+.work__media,
+.work__caption {
+  grid-column: 1 / -1;
+}
+
+/* Row 1's Pause/Play, 12px under the loop like a figure caption, on the media's left column line. */
+.work__caption {
+  display: flex;
+  margin-top: var(--s-3);
+}
+
+/* One top aligned flow: title cap on the media's top edge, then claim, meta, award and links, never pinned to
+   the media's bottom (short rows would open a hole in the middle). */
+.work__text {
+  grid-column: 1 / -1;
+  padding-top: var(--s-5);
+}
+
+.work__title {
+  font-size: var(--fs-headline);
+  line-height: var(--lh-headline);
+  letter-spacing: var(--track-headline);
+  text-box: trim-both cap alphabetic;
+}
+
+.work__title a,
+.next__title a,
+.contact--footer a {
+  text-underline-offset: 0.12em;
+}
+
+/* The row title is display sized: its answer is the orange underline arriving, never orange text (Hover). */
+.work__title a {
+  text-decoration-color: transparent;
+}
+
+.work__title a:active,
+.work__body:has(.work__media:active, .work__case:active) .work__title a {
+  color: var(--ink);
+  text-decoration-color: var(--accent);
+}
+
+.work__claim {
+  margin-top: var(--s-5); /* from the title's baseline: clears a 0.19em descender at 64px by 12px */
+  font-size: var(--fs-lede);
+  line-height: var(--lh-lede);
+  text-wrap: balance; /* one sentence of two to four lines: no two word last line */
+  text-box: trim-start cap alphabetic;
+}
+
+.work__meta {
+  margin-top: var(--s-4);
+}
+
+.work__text > .award {
+  margin-top: var(--s-2);
+}
+
+.work__links {
+  margin-top: var(--s-5);
+}
+
+/* The text spans the media's line and the caption's, so the title offset is the same in every row. The second
+   track is 1fr: in rows without a caption it takes only what the text needs past the media, never an empty band
+   (Chrome grew an auto track there by 70 to 170px, so rows 2 to 5 sat on holes under their content). */
+@media (min-width: 640px) {
+  .work__body { grid-template-rows: auto 1fr; }
+  .work__media,
+  .work__caption { grid-column: 1 / 5; }
+  .work__text { grid-column: 5 / -1; grid-row: 1 / span 2; padding-top: 0; }
+}
+
+@media (min-width: 1024px) {
+  .work { margin-top: var(--s-8); }
+  .work__media,
+  .work__caption { grid-column: 1 / 7; }
+  .work__text { grid-column: 8 / -1; }
+}
+
+/* ------------------------------------------------------------------ media frame */
+/* 16:9, the panel as letterbox, a 1px inner edge, nothing overlaid. Media fill it absolutely, so a <video>
+   layered after its poster <picture> covers it exactly. */
+.frame {
+  position: relative;
+  display: block;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: var(--ink);
+  border-radius: var(--radius);
+  background: var(--panel);
 }
-.well > picture { display: contents; }
-.well__video, .well__still {
+
+.frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1px var(--img-edge);
+  pointer-events: none;
+}
+
+.frame > img,
+.frame > picture,
+.frame > video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
 }
-/* The video sits over the still. Its poster is a transparent pixel, so before it has a frame (no JS, or a clip
-   that fell back to native controls) the still shows through it, under the native controls. */
-.js .well { cursor: pointer; }
-/* With JS the frame sits 1px inside the well, so the pinned still stays the page's largest paint (the LCP):
-   on fractional column edges the video's first frame otherwise outranks it by a few px². Ink shows in the 1px. */
-.js .well__video { visibility: hidden; inset: 1px; width: calc(100% - 2px); height: calc(100% - 2px); }
-.js .is-live .well__video { visibility: visible; }
-.js .clip:not([data-static]) .well__video::-webkit-media-controls { display: none !important; }
-.is-live .well__still { visibility: hidden; }
-/* A clip whose controls failed to set up (motion.ts) takes its no-JS form. */
-.js .clip[data-static] .well { cursor: auto; }
-.js .clip[data-static] .well__video { visibility: visible; inset: 0; width: 100%; height: 100%; }
 
-/* Transport: one row of fixed cells aligned to the well. State changes only text inside a cell. The readout cells
-   are 88 and 120px and hold every state at 100% text; under user text spacing (WCAG 1.4.12) they grow to fit their
-   text and the track gives way, so the timecode never overprints the state word. */
-.transport {
+.frame img,
+.frame video {
   width: 100%;
-  display: grid;
-  align-items: center;
-  min-height: 4rem; /* 64 */
-  grid-template-columns: 4rem minmax(5.5rem, max-content) minmax(7.5rem, max-content) minmax(8rem, 1fr);
-  grid-template-areas: 'key tc state track';
-  font: 500 0.875rem/1.25rem var(--sans);
-}
-.transport--cues {
-  grid-template-columns: 4rem minmax(5.5rem, max-content) minmax(7.5rem, max-content) 3rem minmax(8rem, 1fr) 3rem;
-  grid-template-areas: 'key tc state prev track next';
-  padding-right: 0.5rem; /* the next-cue key sits 10px from the edge, like the play key */
-}
-html:not(.js) .transport, .js .clip[data-static] .transport { visibility: hidden; height: 0; min-height: 0; overflow: hidden; }
-
-@supports (width: round(down, 100cqi, 8px)) {
-  .well { width: var(--ww); height: var(--wh); aspect-ratio: auto; }
-  .transport { width: var(--ww); }
+  height: 100%;
+  object-fit: contain;
 }
 
-.tkey, .cue {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  justify-self: center;
-  padding: 0;
-  border: 0;
-  border-radius: var(--r);
-  background: var(--raise);
-  color: var(--on-field);
+/* With JS a video stays out of sight (its native controls too) until video.ts has its first frame on screen, then
+   fades in over the poster, which stays underneath: a hero whose poster is a later frame than 0:00 dissolves into
+   the start instead of jumping to it. Static (no JS, or a failed video): the video shows, with native controls on a
+   hero, over its transparent poster. */
+.js .frame[data-video] > video {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.js .frame[data-video].is-live > video,
+.frame[data-video].is-static > video {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--dur-state) var(--ease-out);
+}
+
+.js .frame[data-video='player']:not(.is-static) {
   cursor: pointer;
 }
-.tkey { grid-area: key; }
-.cue--prev { grid-area: prev; }
-.cue--next { grid-area: next; }
-/* Disabled keys sink 62% into the ink (what opacity .38 drew) under a veil inside the key, not by fading the key
-   itself: a cue key disables under the keyboard focus at the last cue, and its focus ring (drawn outside the key)
-   must keep full strength. The veil has no transition, so enabling and disabling stay instant. */
-.tkey, .cue { position: relative; }
-.cue[aria-disabled='true'], .tkey[aria-disabled='true'] { cursor: default; }
-.cue[aria-disabled='true']::after, .tkey[aria-disabled='true']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--ink);
-  opacity: 0.62;
-}
-@media (hover: hover) and (pointer: fine) {
-  .tkey:not([aria-disabled='true']):hover, .cue:not([aria-disabled='true']):hover { background: var(--raise-hover); }
-}
-.tkey:not([aria-disabled='true']):active, .cue:not([aria-disabled='true']):active { background: var(--raise-hover); }
-/* Play, pause and loading share the key's one cell and crossfade (a transition, so a quick second press reverses it
-   from where it is), so the key never resizes or jumps. Reduced motion keeps the crossfade: it is opacity only.
-   The loading glyph turns only while it is shown, and holds still under reduced motion. */
-.tkey__i {
-  grid-area: 1 / 1;
-  opacity: 0;
-  transition: opacity var(--t-state) var(--ease-out);
-}
-:is([data-state='ready'], [data-state='paused'], [data-state='error']) .tkey__i--play,
-[data-state='playing'] .tkey__i--pause,
-[data-state='loading'] .tkey__i--load { opacity: 1; }
-[data-state='loading'] .tkey__i--load { animation: spin var(--t-spin) linear infinite; }
-@keyframes spin { to { rotate: 1turn; } }
-@media (prefers-reduced-motion: reduce) {
-  [data-state='loading'] .tkey__i--load { animation: none; }
+
+.frame--tall {
+  aspect-ratio: 9 / 16;
 }
 
-/* In the wide row the readout keeps 8px clear of the state word when text spacing grows its cell to fit (77 + 8px is
-   under the 88px cell at 100% text, so nothing moves); the narrow rows space the state word themselves. */
-.tc {
-  grid-area: tc;
-  padding-right: 0.5rem;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-  color: var(--on-field);
+/* Phone screens side by side in the 16:9 panel, full height less a margin, no bezels. */
+.frame--screens {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--s-4);
+  padding-block: var(--s-4);
 }
-.state {
-  grid-area: state;
+
+.frame--screens > img,
+.frame--screens > picture {
+  position: static;
+  width: auto;
+  height: 100%;
+}
+
+/* A screen drawn through a window (--view, set by Frame.astro from Screens.view) keeps that aspect and covers it,
+   centred, so empty app background above and below the controls is left out. */
+.frame--screens img {
+  width: auto;
+  height: 100%;
+  aspect-ratio: var(--view, auto);
+  object-fit: cover;
+}
+
+@media (min-width: 1024px) {
+  .frame--screens { gap: var(--s-5); padding-block: var(--s-5); }
+}
+
+/* ------------------------------------------------------------------ small parts */
+.award {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  white-space: nowrap;
-  color: var(--on-field-2);
-}
-.state__err { display: none; }
-[data-state='playing'] .state, [data-state='error'] .state { color: var(--on-field); }
-[data-state='error'] .state__err { display: block; }
-/* A clip that could not load has no time to read: the readout goes, and in the narrow row the state word and its
-   icon take its place (in the wide row the state keeps its own cell). */
-[data-state='error'] .tc { display: none; }
-
-.track { grid-area: track; position: relative; min-width: 0; align-self: center; margin-right: 1rem; }
-.transport--cues .track { margin-inline: 0.75rem; }
-.lane { position: relative; height: 1.5rem; scroll-margin-top: calc(var(--wh) + 2.5rem); }
-.lane:target { border-radius: 4px; box-shadow: 0 0 0 2px var(--on-field); }
-/* The rail is a border, not a fill: forced colours keeps a border (in CanvasText) and would paint a fill as Canvas,
-   which erased the track while its ticks stayed focusable. The tick marks are repainted there (forced colours, below). */
-.rail {
-  position: absolute;
-  inset: calc(50% - 1px) 0 auto;
-  height: 0;
-  border-top: 2px solid var(--track);
-}
-/* Fill: 4px over the 2px rail, edged in ink on both long sides (rose on track is only 1.12:1). It is placed from the
-   rail's padding edge, under its 2px border. */
-.fill {
-  position: absolute;
-  inset: -4px 0 auto;
-  height: 6px;
-  border-block: 1px solid var(--ink);
-  background: var(--on-field-2);
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-[data-state='playing'] .fill { background: var(--rose); }
-[data-state='ready'] .fill { visibility: hidden; }
-
-.tick {
-  position: absolute;
-  top: 0;
-  left: calc(var(--x) * 100%);
-  width: 1.5rem; /* 24 */
-  height: 1.5rem;
-  margin-left: -0.75rem;
-  display: grid;
-  place-items: center;
-  border-radius: 4px;
-  text-decoration: none;
-  scroll-margin-top: calc(var(--wh) + 2.5rem);
-}
-/* The pressed mark turns rose at once: arrow keys step cues, and a keyboard step never animates. A pointer press
-   lights it from the moment it lands (the tick's press answer; it takes no scale, see the press list). */
-.tick__mark {
-  width: 2px;
-  height: 0.75rem; /* 12 */
-  border-radius: 1px;
-  background: var(--on-field);
-}
-.tick.is-pressed .tick__mark, .tick:active .tick__mark { background: var(--rose); }
-.tick.is-mark { pointer-events: none; }
-.tip {
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
-  left: 50%;
-  z-index: 1; /* the only z-index on the page */
-  width: max-content;
-  max-width: min(18rem, 100cqi - 1rem);
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--r);
-  background: var(--raise);
-  color: var(--on-field);
-  white-space: normal;
-  text-align: left;
-  /* Slide the box by its own width in proportion to the tick's place on the track: it stays over the track. */
-  translate: calc(var(--x) * -100%) 0;
-  transform-origin: calc(var(--x) * 100%) 100%;
-  opacity: 0;
-  scale: 0.97;
-  pointer-events: none;
-  transition: opacity var(--t-tip) var(--ease-out), scale var(--t-tip) var(--ease-out);
-}
-/* A transparent bridge over the 8px gap, so the pointer can travel from the tick onto its tooltip without
-   leaving the link (WCAG 1.4.13, hoverable). It takes pointer events only while the tip is open. */
-.tip::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 0.5rem; }
-.tip__t { display: block; color: var(--on-field-2); }
-.tick[data-tip] .tip { opacity: 1; scale: 1; pointer-events: auto; }
-/* After a tip closes, the next opens with no delay and no fade for 600ms; keyboard focus always opens it at once. */
-.lane[data-instant] .tip { transition-duration: 0ms; }
-@media (prefers-reduced-motion: reduce) {
-  .tip { scale: 1; transition-property: opacity; }
-}
-
-.fallback {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  min-height: 2.75rem;
-  margin-left: 0.75rem;
-  color: var(--on-field);
-  text-decoration: underline 1px;
-  text-underline-offset: 4px;
-}
-.fallback[hidden], [data-state='error'] .lane { display: none; }
-
-/* Narrow fields: one 56px row. Key, previous cue, track, next cue; timecode and state as one line above
-   the track in on-field-2. */
-@container clip (width < 34rem) {
-  .transport {
-    min-height: 3.5rem;
-    grid-template-columns: 3.5rem minmax(0, auto) 1fr;
-    grid-template-rows: 1.5rem 2rem;
-    grid-template-areas: 'key tc state' 'key track track';
-  }
-  .transport--cues {
-    grid-template-columns: 3.25rem 2.75rem minmax(0, auto) 1fr 2.75rem;
-    grid-template-areas: 'key prev tc state next' 'key prev track track next';
-    padding-right: 0.25rem; /* 4px either end; the 320px track stays 172px, so cues sit >= 24.4px apart */
-  }
-  .transport--cues .track { margin-inline: 0 0.25rem; }
-  .tc, .state { align-self: end; color: var(--on-field-2); }
-  .tc { padding-right: 0; }
-  .state { padding-left: 0.5rem; }
-  .transport--cues .tc { padding-left: 0.25rem; }
-  .track { align-self: center; }
-}
-/* A cue transport takes the narrow row 2rem sooner: in the wide row its track would put the 7.7 and 9.4 ticks
-   under 24px apart for fields 544-559px wide, and one tick would have to drop to an unfocusable mark. */
-@container clip (34rem <= width < 36rem) {
-  .transport--cues {
-    min-height: 3.5rem;
-    grid-template-columns: 3.25rem 2.75rem minmax(0, auto) 1fr 2.75rem;
-    grid-template-rows: 1.5rem 2rem;
-    grid-template-areas: 'key prev tc state next' 'key prev track track next';
-    padding-right: 0.25rem;
-  }
-  .transport--cues .track { margin-inline: 0 0.25rem; align-self: center; }
-  .transport--cues :is(.tc, .state) { align-self: end; color: var(--on-field-2); }
-  .transport--cues .tc { padding-inline: 0.25rem 0; }
-  .transport--cues .state { padding-left: 0.5rem; }
-}
-/* 200% text on a phone: cells wrap into rows instead of overflowing, still in DOM order (key, previous cue,
-   ticks, next cue), with the readout beside the key and every cell inset from the field edge. */
-@container clip (width < 19rem) {
-  .transport, .transport--cues {
-    grid-template-columns: 3.5rem minmax(0, 1fr) 3.5rem;
-    grid-template-rows: auto;
-    grid-template-areas: 'key tc tc' 'key state state' 'prev . .' 'track track track' '. . next';
-    row-gap: 0.25rem;
-    padding: 0 0 0.25rem;
-  }
-  .transport :is(.tc, .state) { white-space: normal; padding-inline: 0.5rem 0.75rem; align-self: center; }
-  .track, .transport--cues .track { margin-inline: 0.75rem; }
-}
-
-/* Caption: what is on screen in plain words (on-field), then provenance (on-field-2) in a hairline list.
-   Its text starts at the transport key's 10px inset; on full-bleed fields, at the page margin. */
-.cap {
-  width: 100%;
-  padding: 0 0.625rem 0.75rem;
-  font: 500 0.875rem/1.25rem var(--sans);
-  color: var(--on-field);
-}
-@supports (width: round(down, 100cqi, 8px)) {
-  .cap { width: var(--ww); }
-}
-html:not(.js) .cap, .js .clip[data-static] .cap { padding-top: 0.75rem; } /* no transport row above it */
-/* The label keeps the body's measure (58ch, here at 14px) under a wide stage, in two even lines where it wraps. */
-.cap__label { max-width: var(--measure); text-wrap: balance; }
-/* The list is padded 6px and pulled back by as much, so overflow clips the separator of whichever item
-   starts a line (it hangs 9px left) while a focus ring (5px) still fits inside the box. */
-.cap__facts {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: 1.0625rem;
-  margin: -0.125rem -0.375rem -0.375rem;
-  padding: 0.375rem;
-  overflow: hidden;
-  color: var(--on-field-2);
-}
-.cap__facts li { position: relative; display: flex; align-items: center; min-height: 1.5rem; }
-.cap__facts li::before {
-  content: '';
-  position: absolute;
-  left: -0.5625rem;
-  top: calc(50% - 0.375rem);
-  width: 0;
-  height: 0.75rem;
-  border-left: 1px solid; /* a border, not a fill: it prints with background graphics off */
-}
-.cap__full {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  min-height: 1.5rem;
-  color: var(--on-field);
-  text-decoration: underline 1px;
-  text-underline-offset: 4px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .cap__full:hover { text-decoration-thickness: 2px; }
-}
-.cap__full:active, .fallback:active { text-decoration-thickness: 2px; }
-
-/* ------------------------------------------------------------------ the band: name, stage, notes, index */
-/* DOM and reading order at every width: name, Sidequest head (title, claim, keys), stage, body (summary, notes, then
-   the flow), index. The body is one box, so the flow always sits directly under the notes, in the body's column.
-   The well always fills its field (no ink sliver): its width is the field's, its height 16:9 on the lattice
-   (cropping <= 1.8%). Below 1024 the stage touches both viewport edges; from 1024 it keeps the gutters. */
-.band > .entry--stage .entry__head { margin-top: 2rem; }
-.band > .entry--stage .clip {
-  max-width: none;
-  --ww: min(100cqi, var(--well-max));
-  --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
-}
-@container page (width < 64rem) {
-  .band > .entry--stage .clip { margin-inline: calc(-1 * var(--edge)); border-radius: 0; }
-  .band > .entry--stage .cap { padding-inline: var(--margin); }
-}
-@media (min-width: 768px) {
-  .band > .entry--stage .entry__head { margin-top: 3rem; }
-}
-.index { container: index / inline-size; margin-top: 3rem; scroll-margin-top: 1.5rem; }
-
-/* From 1024 the article spans the band on a subgrid, so its head, stage and body land in band cells.
-   Positioning lifts the hero above the article's (empty) box, so the name stays selectable (no z-index:
-   tooltips keep the only one). The band's breakpoints are page widths in rem (64rem is 1024px, 75rem is
-   1200px at the default text size), so with 200% text the band stays stacked instead of squeezing a rail. */
-@container page (width >= 64rem) {
-  .band {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: var(--gutter);
-    align-items: start;
-  }
-  .hero { position: relative; }
-  .band > .entry--stage {
-    grid-column: 1 / -1;
-    grid-row: 1 / -1;
-    display: grid;
-    grid-template-columns: subgrid;
-    grid-template-rows: subgrid;
-    align-items: start;
-  }
-}
-/* 1024-1199: the name across the top, then a text rail (title, claim, keys) beside the stage, so all of it
-   is above a 1024x768 fold; the body (with the flow) and the index share the next row. */
-@container page (64rem <= width < 75rem) {
-  .band { grid-template-rows: auto auto auto; }
-  .hero { grid-column: 1 / -1; grid-row: 1; }
-  .band > .entry--stage .entry__head { grid-column: 1 / 5; grid-row: 2; }
-  .band > .entry--stage .clip { grid-column: 5 / -1; grid-row: 2; margin-top: 3rem; }
-  .band > .entry--stage .entry__body { grid-column: 1 / 8; grid-row: 3; margin-top: 3rem; }
-  .index { grid-column: 8 / -1; grid-row: 3; }
-}
-/* >= 1200: name, head and body (with the flow) down the left four columns; the stage from the top of the right
-   eight, the index under it. Row 3 has no item of its own, so it takes whatever height the stage needs past the
-   head; the body crosses into the flexible row 4, so it never stretches the rows the stage sets. The hero may use
-   the gutter beside it: from 1200 to 1210px the cell is 357px and the 64px name is 360.5px. */
-@container page (width >= 75rem) {
-  .band { grid-template-rows: auto auto auto 1fr; }
-  .hero { grid-column: 1 / 5; grid-row: 1; margin-right: calc(-1 * var(--gutter)); }
-  .band > .entry--stage .entry__head { grid-column: 1 / 5; grid-row: 2; }
-  .band > .entry--stage .clip { grid-column: 5 / -1; grid-row: 1 / 4; margin-top: 0; }
-  .band > .entry--stage .entry__body { grid-column: 1 / 5; grid-row: 3 / 5; margin-top: 1.5rem; }
-  .index { grid-column: 5 / -1; grid-row: 4; }
-}
-
-/* Index: an inventory of the projects' own proof. */
-.index__list { display: grid; }
-.row {
-  display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr);
-  align-items: center;
-  column-gap: 1rem;
-  min-height: 4.5rem; /* 72 */
-  margin-inline: -0.5rem;
-  padding: 0.5rem;
-  border-radius: var(--r);
-  text-decoration: none;
-}
-.row__cell {
-  display: grid;
-  place-items: center;
-  width: 6rem;
-  height: 3.5rem;
-  overflow: hidden;
-  border-radius: var(--r);
-  background: var(--ink);
-}
-.row__cell img { width: auto; height: 100%; }
-.row__text { display: grid; }
-.row__title {
+  gap: var(--s-2);
+  font-family: var(--face-display);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-meta);
   font-weight: 600;
-  text-decoration: underline 1px color-mix(in srgb, var(--ink) 40%, transparent);
-  text-underline-offset: 4px;
-  transition: text-decoration-color var(--t-hover) var(--ease-colour); /* in step with the row's fill */
+  color: var(--ink);
 }
-.kicker {
+
+.award svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  color: var(--accent);
+}
+
+/* Text links in a row: each is a flex item, so its 32px line box is its hit area. */
+.links {
   display: flex;
   flex-wrap: wrap;
-  column-gap: 1.0625rem; /* 8 + 1 + 8 */
-  overflow: hidden;
-  font: 500 0.875rem/1.25rem var(--sans);
-  color: var(--ink-2);
+  align-items: baseline;
+  column-gap: var(--s-5);
+  font-family: var(--face-display);
+  font-size: var(--fs-ui);
+  line-height: 2rem;
+  font-weight: 600;
 }
-.kicker li { position: relative; }
-.kicker li::before {
-  content: '';
-  position: absolute;
-  left: -0.5625rem;
-  top: 0.25rem;
-  width: 0;
-  height: 0.75rem;
-  border-left: 1px solid;
-}
-.row__award { font: 600 0.875rem/1.25rem var(--sans); text-wrap: balance; }
-/* The row is one link, named by everything in it. Its parts are separated only by space and drawn hairlines, so a
-   screen reader would run "Unity 6 Computer vision" together: each part but the last ends in a comma that is heard
-   and never seen (generated, so the verbatim copy is untouched). */
-.row__title::after, .kicker li::after {
-  content: ',';
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-.kicker:last-child li:last-child::after { content: none; }
-.row__kind { display: none; color: var(--ink-2); }
-@media (min-width: 768px) {
-  .row { grid-template-columns: 6rem minmax(0, 1fr) 1.25rem; }
-  .row__kind { display: block; }
-  .row__kind--award { color: var(--rose); }
-}
-/* A narrow index (200% text on a phone) drops the thumbnail cell and keeps every word. */
-@container index (width < 20rem) {
-  .row { grid-template-columns: minmax(0, 1fr) auto; }
-  .row__cell { display: none; }
-}
-@media (hover: hover) and (pointer: fine) {
-  .row:hover { background: var(--hover-tint); }
-  .row:hover .row__title { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
-}
-.row:active { background: var(--hover-tint); }
-.row:active .row__title { text-decoration-color: var(--ink); text-decoration-thickness: 2px; }
 
-/* ------------------------------------------------------------------ entries after the band */
-.band + .entry, .entry + .entry, .entry + .pair { margin-top: var(--entry-gap); }
+/* The one filled control per case study. One line at default text sizes; with a larger default font (the rem type
+   grows, the rail does not) the label wraps inside the column instead of running past it or off a phone. The
+   transparent border keeps the 48px box, and forced colours repaints it, so the control keeps its outline there. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 3rem;
+  max-width: 100%;
+  padding: calc(var(--s-3) - 2px) calc(var(--s-5) - 2px);
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--ink);
+  font-family: var(--face-display);
+  font-size: var(--fs-ui);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  text-wrap: balance;
+  text-decoration: none;
+  transition:
+    background-color var(--dur-colour) var(--ease-colour),
+    color var(--dur-colour) var(--ease-colour),
+    transform var(--dur-press) var(--ease-out);
+}
 
-/* Phone: the screenshot is the field. The QR card sits at the foot of the screenshot, so where the phone stands
-   beside the head (>= 1200) it is drawn below the Play and View code keys it follows in the DOM and tab order. */
-.phone { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 2rem; }
-.phone__photo { flex: none; height: 34.5rem; width: auto; max-width: 100%; object-fit: cover; border-radius: var(--r); }
-.phone__field {
-  position: relative;
+.btn svg {
   flex: none;
-  width: min(16rem, 100%); /* 256 */
-  aspect-ratio: 256 / 552; /* 552 tall: the screenshot's own aspect, cover crops 0.3% */
-  overflow: hidden;
-  border-radius: var(--r);
-  background: var(--ink);
-}
-.phone__field::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: inset 0 0 0 1px var(--ring-field);
-  pointer-events: none;
-}
-.phone__shot { width: 100%; height: 100%; object-fit: cover; }
-.qr { display: none; }
-@media (min-width: 640px) and (pointer: fine) {
-  .qr {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    width: max-content;
-    padding: 1rem;
-    border-radius: var(--r);
-    box-shadow: inset 0 0 0 1px var(--ink-2);
-    font: 500 0.875rem/1.25rem var(--sans);
-    text-decoration: none;
-  }
-  .qr img { width: 10rem; height: 10rem; }
-  .qr__line { max-width: 10rem; text-wrap: balance; }
-  .qr__host { color: var(--ink-2); white-space: nowrap; }
-}
-@media (hover: hover) and (pointer: fine) {
-  .qr:hover { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-}
-.qr:active { background: var(--hover-tint); box-shadow: inset 0 0 0 1px var(--ink); }
-@media (min-width: 768px) {
-  .phone { justify-content: flex-start; }
-}
-/* >= 1200: head and body down the left six columns, the phone beside them. The phone crosses the flexible
-   row 2, so it only ever lengthens that row: the body always starts right under the head. */
-@media (min-width: 1200px) {
-  .entry--phone {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    grid-template-rows: auto 1fr;
-    column-gap: var(--gutter);
-    align-items: start;
-  }
-  .entry--phone .entry__head { grid-column: 1 / 7; grid-row: 1; }
-  .entry--phone .phone { grid-column: 7 / -1; grid-row: 1 / 3; margin-top: 0; }
-  .entry--phone .entry__body { grid-column: 1 / 7; grid-row: 2; margin-top: 1.5rem; }
+  width: 0.875rem;
+  height: 0.875rem;
 }
 
-/* Spread: screens as an inventory row with outlined regions, then the regions as legible crops. */
-.spread {
+/* The press answer for every pointer: the hover fill while held (and the .97 scale, Motion). */
+.btn:active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Play/Pause (PlayButton.astro) at the start of a hero's caption and under the home loop: Meta sized, underlined
+   like a link, a 44px hit area from padding that negative margins give back, so the caption keeps its rhythm. */
+.play {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.375rem;
+  margin: -0.6875rem -0.5rem;
+  padding: 0.6875rem 0.5rem;
+  color: var(--ink);
+  font-family: var(--face-display);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-meta);
+  font-weight: 600;
+  text-align: start; /* a button centres its text: "Play" must start at the glyph, not float in the cell */
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    color var(--dur-colour) var(--ease-colour),
+    transform var(--dur-press) var(--ease-out);
+}
+
+/* Without JS, or once a video has failed, there is nothing for the button to drive: the hero keeps its native
+   controls and the loop its poster. The js class is set in the head before first paint, so with JS the control is
+   in place from the first frame and nothing shifts when video.ts runs. */
+html:not(.js) .play,
+html:not(.js) .work__caption,
+.frame.is-static + .caption .play,
+.frame.is-static + .work__caption {
+  display: none;
+}
+
+.play svg {
+  flex: none;
+  width: 0.6875rem;
+  height: 0.6875rem;
+}
+
+/* Play and Pause share one grid cell, so the button is always as wide as "Pause" and the caption after it never
+   moves. The swap is instant: it answers a click or a key, and the glyph and word are the whole message. The
+   underline sits on the words (an inline grid does not pass a text decoration down). */
+.play__label {
+  display: inline-grid;
+}
+
+.play__lbl {
+  grid-area: 1 / 1;
+  text-decoration-line: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.24em;
+}
+
+.play[data-state='playing'] .play__lbl--play,
+.play:not([data-state='playing']) .play__lbl--pause {
+  visibility: hidden;
+}
+
+.play[data-state='playing'] .play__icon--play,
+.play:not([data-state='playing']) .play__icon--pause {
+  display: none;
+}
+
+.play:active {
+  color: var(--accent-ink);
+}
+
+/* ------------------------------------------------------------------ figures */
+.figure {
+  min-width: 0;
+}
+
+/* A video's Play control runs in at the start of its caption's first line, so every caption line starts on the
+   column line (a hanging column beside the control set its lines at 517 at 1440 and squeezed them to 285px at
+   390). The control's 12px from the text is its 8px end padding, no longer given back, plus the word space the
+   markup leaves after the button (4px at 15px). */
+.caption {
+  max-width: var(--measure);
+  margin-top: var(--s-3);
+  text-wrap: balance;
+}
+
+.caption > .play {
+  margin-inline-end: 0;
+  vertical-align: baseline;
+}
+
+/* Up to three phone screens at 9:16, Detail width, three across at every width. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: var(--gutter);
+  align-items: start;
+}
+
+.strip .caption {
+  margin-top: var(--s-2);
+}
+
+/* ------------------------------------------------------------------ case study: header */
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-5);
+  padding-block: var(--s-4);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--face-display);
+  font-size: var(--fs-ui);
+  line-height: var(--lh-ui);
+}
+
+.site-header__name {
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.contact--header {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--s-4); /* keeps the four links on one line at 320 */
+}
+
+@media (min-width: 640px) {
+  .contact--header { column-gap: var(--s-5); }
+}
+
+@media (min-width: 1024px) {
+  .site-header { padding-block: var(--s-5); }
+}
+
+/* ------------------------------------------------------------------ case study: intro */
+/* Rows: title, award, rule, then lede beside the facts rail, then the hero. A full width rule starts the intro
+   body, so the rail and the lede share one top line. */
+.intro {
+  padding-top: var(--s-7);
+}
+
+.title,
+.intro > .award,
+.intro__rule,
+.lede,
+.facts,
+.hero {
+  grid-column: 1 / -1;
+}
+
+.intro > .award {
+  margin-top: var(--s-5);
+}
+
+.intro__rule {
+  border-top: 1px solid var(--rule);
+  margin-top: var(--s-7);
+}
+
+.lede {
+  max-width: var(--measure);
+  margin-top: var(--s-5);
+  font-size: var(--fs-lede);
+  line-height: var(--lh-lede);
+  text-box: trim-start cap alphabetic;
+}
+
+.facts {
+  margin-top: var(--s-6);
+  border-top: 1px solid var(--rule);
+}
+
+.facts__row {
+  padding-block: var(--s-4);
+}
+
+.facts__row + .facts__row {
+  border-top: 1px solid var(--hair);
+}
+
+.facts dt,
+.facts dd {
+  text-box: trim-both cap alphabetic;
+}
+
+/* Stacked (the rail from 1024, and under 360), the value sits 12px under its label, the same ink gap as between
+   the value's own lines, so the label reads as part of its row rather than crowding the value. */
+.facts dd {
+  margin-top: var(--s-3);
+  font-family: var(--face-display);
+  font-size: var(--fs-ui);
+  line-height: var(--lh-ui);
+  font-weight: 500;
+}
+
+.facts__links {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-inline: calc(-1 * var(--edge));
-  padding: 1rem;
-  border-radius: 0;
-}
-.spread__row { display: contents; }
-.shot { position: relative; overflow: hidden; border-radius: var(--r); background: #fff; }
-.shot img { width: 100%; height: auto; }
-.shot--1 { order: 1; scroll-margin-top: 1.5rem; }
-.crop--allocation { order: 2; }
-.shot--3 { order: 3; scroll-margin-top: 1.5rem; }
-.crop--volunteer { order: 4; }
-.shot--2 { order: 5; }
-.outline {
-  position: absolute;
-  left: var(--l);
-  top: var(--t);
-  width: var(--w);
-  height: var(--h);
-  border-radius: 4px;
-  box-shadow: 0 0 0 1px var(--ink);
-  pointer-events: none;
-}
-.crop { display: block; border-radius: var(--r); }
-.crop img { width: 100%; height: auto; border-radius: var(--r); }
-@media (min-width: 768px) {
-  .spread { margin-inline: 0; padding: 1.5rem; border-radius: var(--r); max-width: var(--field-max); }
-  .spread__row { display: grid; gap: 1rem; }
-  .spread__screens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .spread__crops { justify-items: start; }
-  .crop--allocation { max-width: 632px; }
-  .crop--volunteer { max-width: 460px; }
-  .shot, .crop { order: 0; }
-}
-@media (min-width: 1200px) {
-  /* Equal heights: columns in the ratio of the crops' aspects (632/392 : 460/440). The road crop lands
-     at about 0.9x, so the analyzer text stays >= 14 CSS px. */
-  .spread__crops { grid-template-columns: 1.6122fr 1.0455fr; align-items: start; }
-  .crop--allocation, .crop--volunteer { max-width: none; width: 100%; }
-  /* Head and body across seven columns, the 1120 field under them. The spread holds no focus stop, so
-     drawing it after the body changes no focus order. */
-  .entry--spread {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    column-gap: var(--gutter);
-  }
-  .entry--spread .entry__head { grid-column: 1 / 8; grid-row: 1; }
-  .entry--spread .entry__body { grid-column: 1 / 8; grid-row: 2; margin-top: 1.5rem; }
-  .entry--spread .spread { grid-column: 1 / -1; grid-row: 3; }
+  align-items: flex-start;
+  gap: var(--s-3);
+  font-weight: 600;
 }
 
-/* Pair: Sunrise (7 columns) and GyroBlaster (5), each head, field, body like every other entry. */
-@supports (width: round(down, 100%, 8px)) {
-  @media (min-width: 768px) {
-    .entry--pair .clip { width: round(down, 100%, 8px); }
-  }
-}
-@media (max-width: 767.98px) {
-  .entry--pair .clip {
-    margin-inline: calc(-1 * var(--edge));
-    border-radius: 0;
-    max-width: none;
-    --ww: min(100cqi, var(--well-max));
-    --wh: round(nearest, calc(var(--ww) * 9 / 16), 8px);
-  }
-  .entry--pair .cap { padding-inline: var(--margin); }
-}
-/* >= 1200: side by side on shared rows (subgrid), so both fields start on one line whatever each head holds. */
-@media (min-width: 1200px) {
-  .pair {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    grid-template-rows: auto auto auto;
-    column-gap: var(--gutter);
-  }
-  .pair > .entry {
-    grid-row: 1 / -1;
-    display: grid;
-    grid-template-rows: subgrid;
-    align-items: start;
-  }
-  .pair > .entry:first-child { grid-column: 1 / 8; }
-  .pair > .entry:last-child { grid-column: 8 / -1; margin-top: 0; }
-  /* The heads fill the shared head row and their keys sit at its foot, so the two Watch keys share one line 32px over
-     both fields whatever each head holds above them (GyroBlaster has no claim). The keys keep their 24px under the
-     tags as padding, which an auto margin cannot hold. */
-  .pair .entry__head { align-self: stretch; display: flex; flex-direction: column; }
-  .pair .entry__head > .keys { margin-top: auto; padding-top: 1.5rem; }
+.facts__links > a:not(.btn) {
+  display: inline-block;
+  line-height: 2rem;
 }
 
-/* Evidence rings: hovering or focusing a note draws a 2px ring on what it governs (never rose). */
-.entry:has(.note[data-proof='sidequest-4.5']:focus-within) .tick[data-ring='sidequest-4.5'],
-.entry:has(.note[data-proof='sunrise-13.7']:focus-within) .tick[data-ring='sunrise-13.7'],
-.entry:has(.note[data-proof='sidequest-cues']:focus-within) .lane { box-shadow: 0 0 0 2px var(--on-field); }
-.entry:has(.note[data-proof='reliefiq-allocation']:focus-within) .outline[data-ring='reliefiq-allocation'],
-.entry:has(.note[data-proof='reliefiq-volunteer']:focus-within) .outline[data-ring='reliefiq-volunteer'],
-.shot:target .outline { box-shadow: 0 0 0 2px var(--ink); }
-.entry:has(.note[data-proof='reliefiq-allocation']:focus-within) .crop[data-ring='reliefiq-allocation'],
-.entry:has(.note[data-proof='reliefiq-volunteer']:focus-within) .crop[data-ring='reliefiq-volunteer'],
-.spread:has(#reliefiq-allocation:target) .crop--allocation,
-.spread:has(#reliefiq-volunteer:target) .crop--volunteer { outline: 2px solid var(--on-field); outline-offset: 4px; }
+/* The desktop bridge to a phone first game: shown only to fine pointers. */
+.qr {
+  display: none;
+}
+
+.hero {
+  margin-top: var(--s-6);
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .entry:has(.note[data-proof='sidequest-4.5']:hover) .tick[data-ring='sidequest-4.5'],
-  .entry:has(.note[data-proof='sunrise-13.7']:hover) .tick[data-ring='sunrise-13.7'],
-  .entry:has(.note[data-proof='sidequest-cues']:hover) .lane { box-shadow: 0 0 0 2px var(--on-field); }
-  .entry:has(.note[data-proof='reliefiq-allocation']:hover) .outline[data-ring='reliefiq-allocation'],
-  .entry:has(.note[data-proof='reliefiq-volunteer']:hover) .outline[data-ring='reliefiq-volunteer'] { box-shadow: 0 0 0 2px var(--ink); }
-  .entry:has(.note[data-proof='reliefiq-allocation']:hover) .crop[data-ring='reliefiq-allocation'],
-  .entry:has(.note[data-proof='reliefiq-volunteer']:hover) .crop[data-ring='reliefiq-volunteer'] { outline: 2px solid var(--on-field); outline-offset: 4px; }
+  .qr {
+    display: grid;
+    justify-items: start;
+    gap: var(--s-2);
+    margin-top: var(--s-4);
+  }
+
+  .qr img {
+    width: 10rem;
+    height: 10rem;
+  }
 }
 
-/* ------------------------------------------------------------------ close and footer */
-/* The address breaks only after "@"; "andrew.cmu.edu" has no break opportunity of its own, so it stays whole unless
-   it would overflow (user text spacing widens it past the 12.5cqi cap). The size is capped by the column (12.5cqi:
-   the 7.75em host stays within 97% of it), so with 200% text it shrinks instead of overflowing. */
-.close { margin-top: var(--entry-gap); container-type: inline-size; }
-.close__mail {
-  font: 600 min(2.5rem, 12.5cqi) / 1.2 var(--display); /* 40/48 */
-  letter-spacing: -0.02em;
-  overflow-wrap: normal;
-}
-.close__mail a {
-  display: inline-block; /* so the press scale applies; it still breaks after "@" inside its own box */
-  text-decoration: underline 2px color-mix(in srgb, var(--ink) 40%, transparent);
-  text-underline-offset: 10px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .close__mail a:hover { text-decoration-color: var(--ink); }
-}
-.close__mail a:active { text-decoration-color: var(--ink); }
-.close__row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.5rem; margin-top: 2rem; }
-.close__where { display: flex; flex-wrap: wrap; column-gap: 1.0625rem; overflow: hidden; color: var(--ink-2); }
-.close__where li { position: relative; }
-.close__where li::before {
-  content: '';
-  position: absolute;
-  left: -0.5625rem;
-  top: calc(50% - 0.375rem);
-  width: 0;
-  height: 0.75rem;
-  border-left: 1px solid;
-}
-.close__host { overflow-wrap: anywhere; }
-@media (min-width: 768px) {
-  .close__mail { font-size: min(4rem, 12.5cqi); line-height: 1; } /* 64/64 */
-}
-@media (max-width: 359.98px) {
-  .close__mail { font-size: min(1.5rem, 12.5cqi); line-height: 1.3333; } /* 24/32 */
+/* Under 1024 the rail sits under the lede with label and value side by side, as direction B draws it at 390: the
+   rail, the list and each row are subgrids of the intro. Label in column 1 and value in 2 to 4 under 640 (from
+   360, where the widest button, "Play on your phone", still fits three columns); label in 1 and 2 and value in
+   3 to 8 from 640. Under 360 they stack. */
+@media (min-width: 360px) and (max-width: 1023px) {
+  .facts,
+  .facts dl {
+    display: grid;
+    grid-template-columns: subgrid;
+  }
+
+  .facts dl { grid-column: 1 / -1; }
+
+  .facts__row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+  }
+
+  .facts dt { grid-column: 1 / 2; }
+  .facts dd { grid-column: 2 / -1; margin-top: 0; }
 }
 
-.foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0 1rem;
-  min-height: 3.5rem;
-  margin-top: 6rem;
-  font: 500 0.875rem/1.25rem var(--sans);
+@media (min-width: 640px) {
+  .lede { grid-column: 1 / 8; }
+  .facts dt { grid-column: 1 / 3; }
+  .facts dd { grid-column: 3 / -1; }
+}
+
+@media (min-width: 1024px) {
+  .intro { padding-top: var(--s-8); }
+  .intro__rule { margin-top: var(--s-8); }
+  .lede { grid-column: 4 / 11; grid-row: 4; }
+
+  .facts {
+    grid-column: 1 / 4;
+    grid-row: 4 / span 2;
+    align-self: start;
+    margin-top: 0;
+    border-top: 0;
+  }
+
+  .facts,
+  .facts dl,
+  .facts__row { display: block; }
+  .facts__row:first-child { padding-top: var(--s-5); }
+  .facts dd { margin-top: var(--s-3); }
+
+  .hero { grid-column: 4 / -1; grid-row: 5; margin-top: var(--s-7); }
+  .hero--figure { grid-column: 4 / 10; }
+}
+
+@media (min-width: 1024px) and (min-height: 720px) {
+  .facts {
+    position: sticky;
+    top: var(--s-6);
+  }
+}
+
+/* From 1024 to 1099 the rail is 214 to 233px, and "Play on your phone" with 24px sides is 219: 16px sides keep it
+   on one line inside the column there (it wrapped, or ran 5px into the gutter). */
+@media (min-width: 1024px) and (max-width: 1099px) {
+  .facts .btn { padding-inline: calc(var(--s-4) - 2px); }
+}
+
+/* The Figure slot never draws wider than 552 CSS px, whatever the text zoom: its weakest sources are 1104 to
+   1110 px wide, so wider would drop under 2x. */
+.figure:not(.figure--wide) {
+  max-width: 552px;
+}
+
+.hero:not(.hero--figure) {
+  max-width: none;
+}
+
+/* ------------------------------------------------------------------ case study: sections */
+/* A 1px ink rule, the head in columns 1 to 3, the body in 4 to 12 (a subgrid, so prose and figures land on the
+   page's own column lines: prose and Figure in 4 to 9, Wide and strips in 4 to 12). */
+.section {
+  margin-top: var(--section);
+  padding-top: var(--s-5);
+  border-top: 1px solid var(--rule);
+  row-gap: var(--s-5);
+}
+
+.section__head {
+  grid-column: 1 / -1;
+  font-size: var(--fs-title);
+  line-height: var(--lh-title);
+  letter-spacing: var(--track-title);
+  text-box: trim-both cap alphabetic;
+}
+
+.section__body {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-content: start;
+}
+
+.section__body > *,
+.sub > * {
+  grid-column: 1 / -1;
+}
+
+.section__body > * + *,
+.sub > * + * {
+  margin-top: var(--s-6);
+}
+
+.section__body > .sub + .sub {
+  margin-top: var(--s-8);
+}
+
+.sub {
+  display: grid;
+  grid-template-columns: subgrid;
+  align-content: start;
+}
+
+.sub__head {
+  font-size: var(--fs-body);
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  text-box: trim-both cap alphabetic;
+}
+
+.sub > .sub__head + * {
+  margin-top: var(--s-3);
+}
+
+.prose {
+  max-width: var(--measure);
+}
+
+.prose > :first-child {
+  text-box: trim-start cap alphabetic;
+}
+
+.prose > * + * {
+  margin-top: var(--s-4);
+}
+
+.prose ul,
+.prose ol {
+  padding-inline-start: 1.25em;
+}
+
+.prose li + li {
+  margin-top: var(--s-2);
+}
+
+.prose li::marker {
   color: var(--ink-2);
 }
-.foot__top {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  min-height: 2.75rem;
-  color: var(--ink);
-  text-decoration: underline 1px;
-  text-underline-offset: 4px;
+
+@media (min-width: 1024px) {
+  .section { row-gap: 0; }
+  .section__head { grid-column: 1 / 4; }
+  .section__body { grid-column: 4 / -1; }
+  .section__body > *,
+  .sub > * { grid-column: 1 / 7; }
+  .section__body > .sub,
+  .section__body > .figure--wide,
+  .section__body > .strip,
+  .sub > .figure--wide,
+  .sub > .strip { grid-column: 1 / -1; }
 }
+
+/* A data table: real rows, values right aligned in Schibsted 700, the caption under it. */
+.table {
+  width: 100%;
+  font-family: var(--face-display);
+}
+
+.table caption {
+  caption-side: bottom;
+  padding-top: var(--s-3);
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding-block: var(--s-3);
+  border-bottom: 1px solid var(--hair);
+  text-align: left;
+  vertical-align: baseline;
+}
+
+.table thead th {
+  padding-top: 0;
+  border-bottom-color: var(--rule);
+  font-size: var(--fs-meta);
+  line-height: var(--lh-meta);
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.table tbody th {
+  padding-inline-end: var(--s-5);
+  font-family: var(--face-text);
+  font-size: var(--fs-body);
+  font-weight: 400;
+}
+
+.table td,
+.table thead th:last-child {
+  text-align: right;
+}
+
+.table td {
+  font-size: var(--fs-lede);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* Narrow screens with enlarged text: let values and labels wrap instead of pushing the page sideways. */
+@media (max-width: 479px) {
+  /* With text enlarged on the narrowest phones the table can still be wider than its column: it scrolls on its own
+     instead of pushing the page sideways (data tables are exempt from reflow; the page is not). */
+  .table-wrap { max-width: 100%; overflow-x: auto; }
+  .table tbody th { padding-inline-end: var(--s-3); }
+  .table td { white-space: normal; font-size: var(--fs-body); }
+  .table th,
+  .table td { overflow-wrap: anywhere; }
+}
+
+/* Charts are inline SVG; their internals live with the chart component. Labels stay at Meta size (15 CSS px),
+   so they belong in user space that is not scaled by a viewBox. */
+.chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.chart text {
+  font-family: var(--face-display);
+  font-weight: 500;
+  fill: var(--ink-2);
+}
+
+/* ------------------------------------------------------------------ case study: next project */
+.next__title {
+  font-family: var(--face-display);
+  font-weight: 800;
+  font-size: var(--fs-headline);
+  line-height: var(--lh-headline);
+  letter-spacing: var(--track-headline);
+  text-box: trim-both cap alphabetic;
+}
+
+.next__claim {
+  max-width: var(--measure);
+  font-size: var(--fs-lede);
+  line-height: var(--lh-lede);
+  text-wrap: balance;
+  text-box: trim-start cap alphabetic;
+}
+
+.next__title + .next__claim {
+  margin-top: var(--s-5);
+}
+
+.next__claim + .links,
+.prose + .links,
+.prose > .links {
+  margin-top: var(--s-5);
+}
+
+/* ------------------------------------------------------------------ footer */
+/* The contact row's second and last appearance, at headline size under a 2px ink rule. */
+.footer {
+  margin-top: var(--section);
+  padding-bottom: var(--s-7);
+}
+
+.contact--footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-6);
+  padding-top: var(--s-6);
+  border-top: 2px solid var(--rule);
+  font-weight: 800;
+  font-size: var(--fs-headline);
+  line-height: 1.15;
+  letter-spacing: var(--track-headline);
+}
+
+@media (min-width: 1024px) {
+  .footer { padding-bottom: var(--s-8); }
+  .contact--footer { column-gap: var(--s-7); padding-top: var(--s-7); }
+}
+
+/* ------------------------------------------------------------------ hover: fine pointers only */
 @media (hover: hover) and (pointer: fine) {
-  .foot__top:hover { text-decoration-thickness: 2px; }
-}
-.foot__top:active { text-decoration-thickness: 2px; }
+  a:hover {
+    color: var(--accent-ink);
+    text-decoration-color: var(--accent-ink);
+  }
 
-/* ------------------------------------------------------------------ forced colours (Windows contrast themes) */
-/* Forced colours paint every fill as Canvas and drop every box-shadow. The rail is a border (above), so it stays, in
-   CanvasText; the tick marks take CanvasText as their own paint, and the progress and the held cue Highlight; every
-   key drawn by a fill or an inset ring gets a transparent outline, invisible elsewhere and a system colour here. */
-@media (forced-colors: active) {
-  .rail .fill { forced-color-adjust: none; background: Highlight; border-color: Canvas; }
-  .tick__mark { forced-color-adjust: none; background: CanvasText; }
-  .tick.is-pressed .tick__mark, .tick:active .tick__mark { background: Highlight; }
-  :where(.key--lead, .copy, .evkey, .qr, .tkey, .cue, .tip) { outline: 1px solid transparent; outline-offset: -1px; }
-  [aria-disabled='true'] { color: GrayText; }
-  [aria-disabled='true']::after { display: none; } /* the veil is a fill: GrayText says disabled instead */
-  .entry__title { text-decoration: none; } /* its resting underline is transparent; forced, it would read as a link */
-  .outline { forced-color-adjust: none; } /* drawn over a screenshot, whose own colours are kept */
+  /* The whole row answers through its title: hovering the media or "Case study" brings the title's underline in. */
+  .work__title a:hover,
+  .work__body:has(.work__media:hover, .work__case:hover) .work__title a {
+    color: var(--ink);
+    text-decoration-color: var(--accent);
+  }
+
+  .btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .play:hover {
+    color: var(--accent-ink);
+  }
 }
 
-/* ------------------------------------------------------------------ print: stills, timecodes, outlines */
+/* ------------------------------------------------------------------ motion */
+/* Presses scale only when motion is welcome: .97 on the two button styles, .99 on a whole home row (its body, not
+   the hairline), on the strong ease-out in 160ms, so a press reads at once and lets go just as fast. A row scales
+   only for a fine pointer: on a phone a finger that starts a scroll on the media would set it shimmering, and the
+   title's underline already answers there. Text links never scale; they answer in colour. Under reduced motion the
+   scales go and the colour fades and the poster fade stay, because they carry state, not movement. Nothing enters,
+   reveals on scroll or scrolls smoothly. */
+.work__body {
+  transition: transform var(--dur-press) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn:active,
+  .play:active {
+    transform: scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  .work__body:has(.work__media:active, .work__title a:active, .work__case:active) {
+    transform: scale(0.99);
+  }
+}
+
+/* The page view transition: between home and a case study the clicked row's media moves and scales into the case
+   hero (and back), on the strong ease-out in 200ms, so the thing you chose is the thing you land on. The rest of
+   the page cuts: crossfading two pages of 160px type only ghosts them. Base.astro names the pair (vt-media) only when
+   both ends are on screen and the arriving image is decoded; an unpaired end just cuts. Not under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+::view-transition-group(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-group(vt-media) {
+  animation-duration: var(--dur-move);
+  animation-timing-function: var(--ease-out);
+}
+
+/* No crossfade inside the moving frame: the arriving page's picture is drawn from the first frame, as the page
+   around it cuts, and only moves and scales. Lazer Shooter's screens sit a fixed 24px inside a 310px frame and a
+   472px one, so two crossfading copies would never line up. */
+::view-transition-old(vt-media) {
+  animation: none;
+  opacity: 0;
+}
+
+::view-transition-new(vt-media) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------ print */
 @media print {
-  :root { --ground: #fff; --entry-gap: 3rem; } /* paper: entries closer, so pages fill */
-  .field { background: #fff; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  /* The paper shows the still, so it carries the still's own timecode, set in the caption's column: the transport
-     (its live readout, whatever was playing when the page was printed, and its state word) stays on screen. */
-  .top, .well__video, .transport, .keys .icon, .copy, .foot__top, .cap__full .icon { display: none !important; }
-  .well__still { display: block !important; visibility: visible !important; }
-  .cap { padding-top: 0.25rem; color: var(--ink); } /* the timecode line takes the transport row's place and height */
-  .cap::before { content: attr(data-print); display: block; font-weight: 600; }
-  .cap__facts, .cap__full { color: var(--ink); }
-  .keys a[href^='http']::after, .qr::after { content: ' (' attr(href) ')'; font-weight: 400; }
-  /* Browsers drop backgrounds in print, so the rose fill would leave white text on paper: every lead key prints
-     as the outlined key, ink on white. */
-  .key--lead { background: none; color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-  .band > .entry--stage .clip, .entry--pair .clip, .spread { margin-inline: 0; }
-  /* Pages fill: an entry may break between its blocks, but its head (title to keys) is never cut and stays with
-     what follows it, and the name with its line, a figure, a still, a crop, an index row, a summary, a note (a split
-     note draws its evidence key over its last line) or the flow is never cut. Summaries stay whole because Chrome
-     drops widows when a short paragraph cannot meet both limits (a 4-line summary split 3 + 1). */
-  .hero, .entry__title, .entry__head, .award, .claim { break-after: avoid; }
-  .hero, .entry__head, figure, .shot, .crop, .qr, .row, .summary, .note, .flow, .close { break-inside: avoid; }
-  p { orphans: 3; widows: 3; }
-  .foot { min-height: 0; margin-top: 1.5rem; break-before: avoid; } /* the copyright line never takes a page alone */
-  /* The page is under 768px wide, but the spread prints in its wide form (screens in a row, crops in a row
-     beneath), so it is one compact figure that travels with its head instead of five page-high images. */
-  .spread { padding: 1rem; }
-  .spread__row { display: grid; gap: 1rem; }
-  .spread__screens { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .spread__crops { grid-template-columns: 1fr 1fr; align-items: start; }
-  .shot, .crop { order: 0; }
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  :root {
+    --section: var(--s-7);
+  }
+
+  html,
+  body {
+    background: none; /* the sheet's own white */
+  }
+
+  video,
+  .play,
+  .work__caption,
+  .qr {
+    display: none !important;
+  }
+
+  .facts {
+    position: static;
+  }
+
+  .work__item,
+  .figure,
+  .facts__row,
+  .table tr,
+  .strip {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3,
+  .section__head {
+    break-after: avoid;
+  }
+
+  .btn {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    text-decoration-line: underline;
+    text-decoration-color: var(--accent);
+  }
+
+  .contact--footer {
+    font-size: var(--fs-title);
+  }
+
+  main a[href^='http']:not(.frame)::after,
+  .contact a[href^='http']::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.8em;
+    font-weight: 400;
+    color: var(--ink-2);
+    overflow-wrap: anywhere;
+  }
 }

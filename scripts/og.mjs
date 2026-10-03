@@ -1,10 +1,12 @@
 #!/usr/bin/env node
-// Renders the page's brand images from the Cue design, with the real fonts and the colour tokens read from
+// Renders the site's brand images in direction B, Editorial, with the real fonts and the colour tokens read from
 // src/styles/global.css (so a token change reaches them on the next run):
-//   public/og.png (1200x630, <= 150 KB): the name and tagline on the light face, beside an ink field holding the
-//     4.5 s Sidequest frame and the stage's own transport, paused at 0:04.5 with the 4.5 cue pressed (rose).
-//   public/favicon.png (512x512) and public/apple-touch-icon.png (180x180): an "S" in Funnel Display on an ink field.
-// Uses the installed Chrome.
+//   public/og.jpg (1200x630, <= 150 KB): the home masthead as a share card. The name set to the measure over a 2px
+//     rule, then the tagline and the five project titles (projects.ts, in order) beside the Sidequest poster frame,
+//     the same frame row 1 opens with on home.
+//   public/favicon.png (512x512) and public/apple-touch-icon.png (180x180): an "S" in Schibsted Grotesk 800 in
+//     paper on an ink square (square corners, as everywhere on the site).
+// Uses the installed Chrome. Not part of `npm run build`; run it after a token, font or title change:
 //
 //   node scripts/og.mjs
 
@@ -12,12 +14,14 @@ import { readFileSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
+import { projects } from '../src/data/projects.ts';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
 const b64 = (p) => readFileSync(join(root, p)).toString('base64');
-const display = b64('node_modules/@fontsource/funnel-display/files/funnel-display-latin-600-normal.woff2');
-const sans = b64('node_modules/@fontsource-variable/funnel-sans/files/funnel-sans-latin-wght-normal.woff2');
-const still = b64('src/assets/stills/sidequest-4.5.webp'); // the pinned frame (build input; q95)
+const display = b64('node_modules/@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2');
+const text = b64('node_modules/@fontsource-variable/newsreader/files/newsreader-latin-wght-normal.woff2');
+// The Sidequest poster (build input, 1920x1080 lossless), drawn at 540 CSS px here: 3.6x its pixels.
+const poster = await sharp(join(root, 'src/assets/v3/sidequest/run-34.5.webp')).resize(1080).webp({ quality: 92 }).toBuffer();
 
 // Tokens from the first :root block of global.css.
 const css = readFileSync(join(root, 'src/styles/global.css'), 'utf8');
@@ -25,83 +29,71 @@ const rootBlock = css.slice(css.indexOf(':root {'), css.indexOf('\n}', css.index
 const tok = (name) => {
   const m = new RegExp(`--${name}:\\s*([^;]+);`).exec(rootBlock);
   if (!m) throw new Error(`og.mjs: token --${name} not found in global.css`);
-  return m[1].trim();
+  return m[1].trim().replace(/\s*\/\*.*$/, '');
 };
-const c = Object.fromEntries(['ground', 'ink', 'on-field', 'on-field-2', 'raise', 'track', 'rose', 'r'].map((n) => [n, tok(n)]));
+const c = Object.fromEntries(['paper', 'panel', 'ink', 'ink-2', 'img-edge'].map((n) => [n, tok(n)]));
 
-// Tabler paths, as Icon.astro draws them (1.5 stroke, round caps and joins).
-const icon = (paths, size, colour) =>
-  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${colour}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${paths.map((d) => `<path d="${d}"/>`).join('')}</svg>`;
-const play = ['M7 4v16l13 -8l-13 -8'];
-const back = ['M20 5v14l-12 -7l12 -7', 'M4 5l0 14'];
-const fwd = ['M4 5v14l12 -7l-12 -7', 'M20 5l0 14'];
-const cues = [1.7, 4.5, 7.7, 9.4, 11.2]; // presentation.ts
-const dur = 12;
+// The headline Sai fixed (PRODUCT.md) and the project titles, in the fixed order.
+const NAME = 'Sai Bhandar';
+const TAGLINE = 'Business + CS @ CMU';
+const titles = projects.map((p) => p.title);
+if (titles.join() !== 'Sidequest,Lazer Shooter,ReliefIQ,Sunrise,GyroBlaster') throw new Error(`og.mjs: unexpected titles ${titles}`);
 
 const fonts = `
-@font-face { font-family: D; src: url(data:font/woff2;base64,${display}) format('woff2'); font-weight: 600; }
-@font-face { font-family: S; src: url(data:font/woff2;base64,${sans}) format('woff2-variations'); font-weight: 300 800; }
-* { box-sizing: border-box; margin: 0; }`;
+@font-face { font-family: D; src: url(data:font/woff2;base64,${display}) format('woff2-variations'); font-weight: 400 900; }
+@font-face { font-family: T; src: url(data:font/woff2;base64,${text}) format('woff2-variations'); font-weight: 200 800; }
+* { box-sizing: border-box; margin: 0; padding: 0; }`;
 
+// The site grid at 1024 and up: 48px side margins, 12 columns of 70 with 24px gutters across 1104. The top padding
+// centres the ink vertically (name cap top 57px from the top edge, poster bottom 57px from the bottom).
 const og = `<!doctype html><html><head><style>${fonts}
-body { width: 1200px; height: 630px; overflow: hidden; background: ${c.ground}; color: ${c.ink}; font-family: S; font-variant-numeric: tabular-nums; }
-.text { position: absolute; left: 64px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; padding-bottom: 8px; }
-.name { font: 600 88px/88px D; letter-spacing: -0.02em; }
-.tag { margin-top: 16px; font: 500 36px/44px S; }
-.field { position: absolute; left: 600px; top: 107px; width: 600px; background: ${c.ink}; border-radius: ${c.r} 0 0 ${c.r}; overflow: hidden; }
-.well { width: 600px; height: 336px; background: url(data:image/webp;base64,${still}) center / cover; }
-.tr { display: grid; grid-template-columns: 64px 112px 72px 48px 1fr 48px; align-items: center; height: 80px; padding-right: 8px; color: ${c['on-field']}; font: 500 16px/20px S; }
-.key { justify-self: center; width: 44px; height: 44px; border-radius: ${c.r}; background: ${c.raise}; display: grid; place-items: center; }
-.state { color: ${c['on-field-2']}; }
-.lane { position: relative; height: 24px; margin-inline: 12px; }
-.rail { position: absolute; left: 0; right: 0; top: 11px; height: 2px; background: ${c.track}; }
-.fill { position: absolute; left: 0; top: 9px; height: 6px; width: ${(4.5 / dur) * 100}%; background: ${c['on-field-2']}; border-block: 1px solid ${c.ink}; }
-.tick { position: absolute; top: 6px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: ${c['on-field']}; }
-.tick.on { background: ${c.rose}; }
+body { width: 1200px; height: 630px; overflow: hidden; background: ${c.paper}; color: ${c.ink}; padding: 74px 48px 0; -webkit-font-smoothing: antialiased; }
+.measure { container-type: inline-size; }
+.name { font: 800 calc(100cqi / 5.66)/0.86 D; letter-spacing: -0.04em; margin-left: -0.018em; text-box: trim-both cap alphabetic; }
+.rule { height: 0; border-top: 2px solid ${c.ink}; margin-top: 24px; }
+.deck { display: grid; grid-template-columns: repeat(12, 70px); column-gap: 24px; margin-top: 32px; }
+.left { grid-column: 1 / 7; }
+.tag { font: 700 40px/48px D; letter-spacing: -0.015em; text-box: trim-both cap alphabetic; }
+ol { list-style: none; margin-top: 28px; font: 400 28px/40px T; color: ${c.ink}; }
+.frame { grid-column: 7 / 13; position: relative; aspect-ratio: 16 / 9; background: ${c.panel}; overflow: hidden; }
+.frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.frame::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px ${c['img-edge']}; }
 </style></head><body>
-<div class="text"><div class="name">Sai Bhandar</div><div class="tag">Business + CS @ CMU</div></div>
-<div class="field">
-  <div class="well"></div>
-  <div class="tr">
-    <div class="key">${icon(play, 24, c['on-field'])}</div>
-    <div>0:04.5 / 0:12</div>
-    <div class="state">Paused</div>
-    <div class="key">${icon(back, 20, c['on-field'])}</div>
-    <div class="lane"><div class="rail"></div><div class="fill"></div>${cues
-      .map((t) => `<div class="tick${t === 4.5 ? ' on' : ''}" style="left:${(t / dur) * 100}%"></div>`)
-      .join('')}</div>
-    <div class="key">${icon(fwd, 20, c['on-field'])}</div>
-  </div>
+<div class="measure"><div class="name">${NAME}</div></div>
+<div class="rule"></div>
+<div class="deck">
+  <div class="left"><div class="tag">${TAGLINE}</div><ol>${titles.map((t) => `<li>${t}</li>`).join('')}</ol></div>
+  <div class="frame"><img src="data:image/webp;base64,${poster.toString('base64')}" alt=""></div>
 </div>
 </body></html>`;
 
-// The tab icon: one glyph on an ink field, corners at the page's 10px key radius in proportion (10/44).
-const iconPage = (size, radius) => `<!doctype html><html><head><style>${fonts}
-body { width: ${size}px; height: ${size}px; overflow: hidden; background: transparent; }
-.f { width: ${size}px; height: ${size}px; border-radius: ${radius}px; background: ${c.ink}; color: ${c['on-field']};
-  display: grid; place-items: center; font: 600 ${Math.round(size * 0.72)}px/1 D; padding-bottom: ${Math.round(size * 0.04)}px; }
+const iconPage = (size) => `<!doctype html><html><head><style>${fonts}
+body { width: ${size}px; height: ${size}px; overflow: hidden; background: ${c.ink}; }
+.f { width: ${size}px; height: ${size}px; display: grid; place-items: center; color: ${c.paper};
+  font: 800 ${Math.round(size * 0.78)}px/1 D; letter-spacing: -0.04em; text-box: trim-both cap alphabetic; }
 </style></head><body><div class="f">S</div></body></html>`;
 
 const browser = await chromium.launch({ channel: 'chrome' });
-async function render(html, width, height) {
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+async function render(html, width, height, scale = 1) {
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: scale });
   await page.setContent(html, { waitUntil: 'load' });
   await page.evaluate(() => document.fonts.ready);
-  const shot = await page.screenshot({ type: 'png', omitBackground: true });
+  const shot = await page.screenshot({ type: 'png' });
   await page.close();
   return shot;
 }
-const ogShot = await render(og, 1200, 630);
-const favShot = await render(iconPage(512, Math.round((512 * 10) / 44)), 512, 512);
-const touchShot = await render(iconPage(180, 0), 180, 180); // iOS rounds its own corners; no transparency
+// The card renders at 2x and is downsampled, so the type is antialiased like a 2x screen, not a 1x one.
+const ogShot = await sharp(await render(og, 1200, 630, 2)).resize(1200, 630, { kernel: 'lanczos3' }).toBuffer();
+const favShot = await render(iconPage(512), 512, 512);
+const touchShot = await render(iconPage(180), 180, 180);
 await browser.close();
 
-const out = join(root, 'public/og.png');
-for (const colours of [256, 192, 128, 96]) {
-  await sharp(ogShot).flatten({ background: c.ground }).png({ palette: true, colours, dither: 0.6, effort: 10, compressionLevel: 9 }).toFile(out);
+const out = join(root, 'public/og.jpg');
+for (const quality of [86, 82, 78, 74]) {
+  await sharp(ogShot).flatten({ background: c.paper }).jpeg({ quality, mozjpeg: true, chromaSubsampling: '4:4:4' }).toFile(out);
   if (statSync(out).size <= 150_000) break;
 }
-console.log(`${statSync(out).size} B  public/og.png`);
+console.log(`${statSync(out).size} B  public/og.jpg`);
 for (const [shot, file] of [[favShot, 'public/favicon.png'], [touchShot, 'public/apple-touch-icon.png']]) {
   await sharp(shot).png({ palette: true, colours: 64, effort: 10, compressionLevel: 9 }).toFile(join(root, file));
   console.log(`${statSync(join(root, file)).size} B  ${file}`);

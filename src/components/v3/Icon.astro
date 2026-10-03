@@ -1,0 +1,22 @@
+---
+// Phosphor Icons (MIT, https://phosphoricons.com), 256 unit grid, filled with currentColor: the award medal, Play,
+// Pause and the external arrow on the one button. Always decorative: the text beside each icon names it.
+const paths = {
+  medal:
+    'M216,96A88,88,0,1,0,72,163.83V240a8,8,0,0,0,11.58,7.16L128,225l44.43,22.21A8.07,8.07,0,0,0,176,248a8,8,0,0,0,8-8V163.83A87.85,87.85,0,0,0,216,96ZM56,96a72,72,0,1,1,72,72A72.08,72.08,0,0,1,56,96Zm16,0a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z',
+  play: 'M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z',
+  pause:
+    'M216,48V208a16,16,0,0,1-16,16H160a16,16,0,0,1-16-16V48a16,16,0,0,1,16-16h40A16,16,0,0,1,216,48ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Z',
+  'arrow-up-right':
+    'M204,64V168a12,12,0,0,1-24,0V93L72.49,200.49a12,12,0,0,1-17-17L163,76H88a12,12,0,0,1,0-24H192A12,12,0,0,1,204,64Z',
+} as const;
+
+interface Props {
+  name: keyof typeof paths;
+  class?: string;
+  hidden?: boolean;
+}
+const { name, class: cls, hidden } = Astro.props;
+---
+
+<svg class={cls} viewBox="0 0 256 256" aria-hidden="true" focusable="false" hidden={hidden}><path fill="currentColor" d={paths[name]}></path></svg>

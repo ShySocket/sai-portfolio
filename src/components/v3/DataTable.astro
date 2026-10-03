@@ -1,0 +1,50 @@
+---
+// A small data table (global.css .table): the head in Meta over an ink rule, row labels in Newsreader, values right
+// aligned in Schibsted 700 at lede size, hairlines between rows. Its caption is the figure's figcaption.
+import type { Table } from '../../data/case-studies';
+import { tie } from '../../lib/text';
+
+interface Props {
+  table: Table;
+}
+const { table } = Astro.props;
+---
+
+<div class="table-wrap">
+<table class="table">
+  <thead>
+    <tr>
+      {table.head.map((h) => <th scope="col" data-verbatim={h.from}>{tie(h.text)}</th>)}
+    </tr>
+  </thead>
+  <tbody>
+    {
+      table.rows.map(([label, value]) => (
+        <tr>
+          <th scope="row" data-verbatim={label.from}>
+            {tie(label.text)}
+          </th>
+          <td data-verbatim={value.from}>{tie(value.text)}</td>
+        </tr>
+      ))
+    }
+  </tbody>
+</table>
+</div>
+
+<style>
+  /* Cells start and end on the column lines (the UA gives th and td 1px of inline padding). */
+  th,
+  td {
+    padding-inline: 0;
+  }
+
+  tbody th {
+    padding-inline-end: var(--s-5);
+  }
+
+  /* The value column keeps its head on one line; the row labels wrap instead. */
+  thead th:last-child {
+    white-space: nowrap;
+  }
+</style>

@@ -1,0 +1,95 @@
+---
+// The facts rail (global.css .facts): Role, Team, When, Stack and Links, each a labelled row; a row with no
+// sourced value is left out rather than filled. The Links row holds the page's one filled button (the live
+// action) and text links for the rest. Lazer Shooter adds its QR code, shown only to fine pointers.
+import type { CaseStudy, Copy } from '../../data/case-studies';
+import { labels } from '../../data/case-studies';
+import { href, tie, url } from '../../lib/text';
+import Icon from './Icon.astro';
+
+interface Props {
+  cs: CaseStudy;
+}
+const { cs } = Astro.props;
+const f = cs.facts;
+const rows: [Copy, Copy | undefined][] = [
+  [labels.role, f.role],
+  [labels.team, f.team],
+  [labels.when, f.when],
+];
+const qr = f.qr;
+---
+
+<div class="facts" id="facts" role="group" aria-label={labels.facts.text}>
+  <dl>
+    {
+      rows.map(
+        ([label, value]) =>
+          value && (
+            <div class="facts__row">
+              <dt data-verbatim={label.from}>{label.text}</dt>
+              <dd data-verbatim={value.from}>{tie(value.text)}</dd>
+            </div>
+          ),
+      )
+    }
+    <div class="facts__row">
+      <dt data-verbatim={labels.stack.from}>{labels.stack.text}</dt>
+      <dd>{f.stack.map((s, i) => <Fragment>{i > 0 && ', '}<span data-verbatim={s.from}>{tie(s.text)}</span></Fragment>)}</dd>
+    </div>
+    {
+      f.links.length > 0 && (
+        <div class="facts__row">
+          <dt data-verbatim={labels.links.from}>{labels.links.text}</dt>
+          <dd class="facts__links">
+            {f.links.map((l) =>
+              l.primary ? (
+                <a class="btn" href={href(l.href)}>
+                  <span data-verbatim={l.label.from}>{l.label.text}</span>
+                  <Icon name="arrow-up-right" />
+                </a>
+              ) : (
+                <a href={href(l.href)} data-verbatim={l.label.from}>
+                  {l.label.text}
+                </a>
+              ),
+            )}
+          </dd>
+        </div>
+      )
+    }
+  </dl>
+  {
+    qr && (
+      <div class="qr" id="play">
+        <img src={url(qr.src)} width="160" height="160" alt="" loading="lazy" decoding="async" />
+        <p class="meta">
+          <span data-verbatim={qr.label.from}>{qr.label.text}</span>
+          <br />
+          <span data-verbatim={qr.host.from}>{qr.host.text}</span>
+        </p>
+      </div>
+    )
+  }
+</div>
+
+<style>
+  /* The QR file carries the 4-module quiet zone scanners need (17px at 160). It stays clear above and below; on the
+     left it overhangs empty paper so the code's own edge sits on the column line, like the links above it. */
+  .qr img {
+    margin-inline-start: calc(-10rem * 4 / 37);
+  }
+
+  /* From 360 to 1023 the rail is a subgrid of the intro: the QR code sits under the values, not the labels. */
+  @media (min-width: 360px) and (max-width: 639px) {
+    .qr {
+      grid-column: 2 / -1;
+    }
+  }
+
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .qr {
+      grid-column: 3 / -1;
+    }
+  }
+</style>

@@ -1,0 +1,142 @@
+---
+// A case study, one template for all five: the header, the title with its award, a full width rule, the lede beside
+// the facts rail, the hero, then Problem, Approach (up to three subsections, each with one captioned figure),
+// Outcome and Next project, then the footer.
+import Base from '../../layouts/Base.astro';
+import Facts from '../../components/v3/Facts.astro';
+import Figure from '../../components/v3/Figure.astro';
+import Footer from '../../components/v3/Footer.astro';
+import SiteHeader from '../../components/v3/SiteHeader.astro';
+import Award from '../../components/v3/Award.astro';
+import { bySlug, caseStudies, labels, type Link } from '../../data/case-studies';
+import { pictureSources, shareImage, widthsFor } from '../../lib/picture';
+import { slots, type SlotName } from '../../styles/slots';
+import { caseUrl, href, tie, url } from '../../lib/text';
+
+export function getStaticPaths() {
+  return caseStudies.map((cs) => ({ params: { slug: cs.slug } }));
+}
+
+const cs = bySlug[Astro.params.slug!];
+const next = bySlug[cs.next];
+if (!cs.hero) throw new Error("case: " + cs.slug + " has no hero");
+if (!next) throw new Error("case: " + cs.slug + " points next to a missing case study");
+
+// The hero image (a still, or a video's poster) is preloaded on desktops, where it sits in the first viewport,
+// and becomes the share image. Lazer Shooter's hero is two portrait screens, so it keeps the site's share image.
+const hm = cs.hero.media;
+const heroImage = hm.kind === 'still' ? { image: hm.image, px: hm.px, alt: hm.alt } : hm.kind === 'video' ? { image: hm.poster, px: hm.posterPx, alt: hm.alt } : null;
+const heroSlot: SlotName = cs.hero.slot === 'figure' ? 'figureCase' : cs.hero.slot;
+const lcp = heroImage && (await pictureSources(heroImage.image, heroImage.px, widthsFor(heroSlot, heroImage.px), slots[heroSlot].sizes));
+// A still hero is an app screenshot (ReliefIQ): its crop keeps the top, where the app's name is; a video poster is a
+// scene, cropped about its centre.
+const share = heroImage && (await shareImage(heroImage.image, heroImage.px, hm.kind === 'still' ? 'top' : undefined));
+
+const sections = { problem: labels.problem, approach: labels.approach, outcome: labels.outcome, next: labels.next };
+const linkRow = (links: Link[]) => links.map((l) => ({ ...l, url: href(l.href) }));
+---
+
+<Base
+  title={`${cs.title.text} · Sai Bhandar`}
+  description={cs.claim.text}
+  path={`work/${cs.slug}/`}
+  image={share?.src}
+  imageAlt={share ? heroImage!.alt.text : undefined}
+  imageWidth={share?.width}
+  imageHeight={share?.height}
+  type="article"
+>
+  <Fragment slot="head">
+    {lcp && <link rel="preload" as="image" type="image/avif" imagesrcset={lcp.avif} imagesizes={lcp.sizes} fetchpriority="high" media="(min-width: 1024px)" />}
+  </Fragment>
+  <SiteHeader />
+  <main id="main" class="wrap" data-page="case">
+    <article>
+      <div class="intro grid">
+        <h1 class="display title" data-verbatim={cs.title.from}>{cs.title.text}</h1>
+        {cs.award && <Award award={cs.award} />}
+        <hr class="intro__rule" />
+        <p class="lede" data-verbatim={cs.lede.from}>{tie(cs.lede.text)}</p>
+        <Facts cs={cs} />
+        <Figure figure={cs.hero} class={cs.hero.slot === 'figure' ? 'hero hero--figure' : 'hero'} priority vt={cs.slug} />
+      </div>
+
+      <section class="section" aria-labelledby="problem">
+        <h2 class="section__head" id="problem" data-verbatim={sections.problem.from}>{sections.problem.text}</h2>
+        <div class="section__body">
+          <div class="prose">
+            {cs.problem.map((p) => <p data-verbatim={p.from}>{tie(p.text)}</p>)}
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="approach">
+        <h2 class="section__head" id="approach" data-verbatim={sections.approach.from}>{sections.approach.text}</h2>
+        <div class="section__body">
+          {
+            cs.approach.map((sub) => (
+              <div class="sub">
+                {sub.heading && (
+                  <h3 class="sub__head" data-verbatim={sub.heading.from}>
+                    {tie(sub.heading.text)}
+                  </h3>
+                )}
+                {sub.body.length > 0 && (
+                  <div class="prose">
+                    {sub.body.map((p) => (
+                      <p data-verbatim={p.from}>{tie(p.text)}</p>
+                    ))}
+                  </div>
+                )}
+                {sub.figure && <Figure figure={sub.figure} />}
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="outcome">
+        <h2 class="section__head" id="outcome" data-verbatim={sections.outcome.from}>{sections.outcome.text}</h2>
+        <div class="section__body">
+          <div class="prose">
+            {cs.outcome.body.map((p) => <p data-verbatim={p.from}>{tie(p.text)}</p>)}
+            {
+              cs.outcome.links.length > 0 && (
+                <p class="links">
+                  {linkRow(cs.outcome.links).map((l) => (
+                    <a href={l.url} data-verbatim={l.label.from}>
+                      {l.label.text}
+                    </a>
+                  ))}
+                </p>
+              )
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="section next" aria-labelledby="next">
+        <h2 class="section__head" id="next" data-verbatim={sections.next.from}>{sections.next.text}</h2>
+        <div class="section__body">
+          <p class="next__title"><a href={caseUrl(next.slug)} data-verbatim={next.title.from}>{next.title.text}</a></p>
+          <p class="next__claim" data-verbatim={next.claim.from}>{tie(next.claim.text)}</p>
+          <p class="links"><a href={url()} data-verbatim={labels.allWork.from}>{labels.allWork.text}</a></p>
+        </div>
+      </section>
+    </article>
+  </main>
+  <Footer />
+</Base>
+
+<style>
+  /* An Outcome with no sentence on record yet starts with its links, level with the section head. */
+  .prose > .links:first-child {
+    margin-top: 0;
+  }
+
+  /* The next title is a link, and its underline hangs 12px under the baseline: the claim keeps 24px of air under
+     the underline rather than under the baseline. */
+  .next__title + .next__claim {
+    margin-top: var(--s-6);
+  }
+</style>

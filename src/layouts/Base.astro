@@ -1,26 +1,62 @@
 ---
-import '@fontsource/funnel-display/latin-600.css';
-import '@fontsource-variable/funnel-sans/wght.css';
-import displayFont from '@fontsource/funnel-display/files/funnel-display-latin-600-normal.woff2?url';
-import sansFont from '@fontsource-variable/funnel-sans/files/funnel-sans-latin-wght-normal.woff2?url';
+// The v3 document shell: head metadata, the two faces, the design system stylesheet. Pages fill <body> and may
+// add head tags (an LCP preload) through <Fragment slot="head">.
+import { Font } from 'astro:assets';
 import '../styles/global.css';
 import tokens from '../styles/global.css?raw';
-import { presentation } from '../data/presentation';
-import { stillSources } from '../data/stills';
+
+interface Props {
+  /** Document and share title. Defaults to the home title Sai approved. */
+  title?: string;
+  /** Meta and share description. Defaults to the home description Sai approved. */
+  description?: string;
+  /** Route below the base path, e.g. 'work/sidequest/' ('' is home). Sets the canonical and og:url. */
+  path?: string;
+  /** Share image: an absolute URL, or a path below the base. Defaults to public/og.jpg (scripts/og.mjs). */
+  image?: string;
+  imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  type?: 'website' | 'article';
+}
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const title = 'Sai Bhandar | Business + CS @ CMU';
-// Built only from confirmed facts in PRODUCT.md and projects.ts (flagged for Sai's review).
-const description =
+const root = new URL(`${base}/`, Astro.site);
+
+// Built only from confirmed facts in PRODUCT.md and projects.ts; approved by Sai on 2026-10-01.
+const HOME_TITLE = 'Sai Bhandar | Business + CS @ CMU';
+const HOME_DESCRIPTION =
   'Sai Bhandar, Business + CS at Carnegie Mellon. Sidequest turns dashcam video into a playable level; Lazer Shooter is laser tag with on-device vision; ReliefIQ won 1st place at the CMU NOVA Hackathon.';
-const canonical = new URL(base + '/', Astro.site).href;
-const og = `${canonical}og.png`;
-// The stage still is the LCP: preload the AVIF set its <picture> picks from (the same srcset and sizes, so the
-// response is reused). Browsers without AVIF skip this hint and take the WebP source as usual.
-const stage = await stillSources(presentation.sidequest.clip!);
-// The browser chrome takes the page's own ground, read from the token at build time (no second copy of the hex).
-const ground = /--ground:\s*(#[0-9a-f]{3,8})\b/i.exec(tokens)?.[1];
-if (!ground) throw new Error('Base.astro: --ground token not found in global.css');
+// Describes public/og.jpg as scripts/og.mjs renders it: the masthead, the tagline, the five project titles and the
+// Sidequest poster frame (its alt is the hero alt in case-studies.ts).
+const HOME_IMAGE_ALT =
+  'Sai Bhandar, Business + CS @ CMU, over the five project titles and a frame of Sidequest in play: the green ball in mid-jump above a parking lot.';
+
+const {
+  title = HOME_TITLE,
+  description = HOME_DESCRIPTION,
+  path = '',
+  image,
+  imageAlt = image ? undefined : HOME_IMAGE_ALT,
+  imageWidth = 1200,
+  imageHeight = 630,
+  type = 'website',
+} = Astro.props;
+
+const canonical = new URL(path.replace(/^\/+/, ''), root).href;
+
+// Chrome prerenders home and the case studies on hover intent (moderate eagerness), so the next page, its hero
+// image included, is ready on click: the view transition below then has a decoded image to land on. Skipped by
+// Chrome under Save-Data; ignored by browsers without speculation rules.
+const home = `${base}/`;
+const speculation = JSON.stringify({
+  prerender: [{ where: { or: [{ href_matches: home }, { href_matches: `${base}/work/*` }] }, eagerness: 'moderate' }],
+});
+const og = new URL(image ?? 'og.jpg', root).href;
+
+// The browser chrome takes the page's own paper, read from the token at build time (no second copy of the hex).
+const paper = /--paper:\s*(#[0-9a-f]{3,8})\b/i.exec(tokens)?.[1];
+if (!paper) throw new Error('Base.astro: --paper token not found in src/styles/global.css');
 ---
 
 <!doctype html>
@@ -30,35 +66,77 @@ if (!ground) throw new Error('Base.astro: --ground token not found in global.css
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content={ground} />
+    <meta name="theme-color" content={paper} />
     <meta name="color-scheme" content="light" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/png" href={`${base}/favicon.png`} />
     <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
-    <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href={sansFont} as="font" type="font/woff2" crossorigin />
-    <link rel="preload" as="image" type="image/avif" imagesrcset={stage.avif} imagesizes={stage.sizes} fetchpriority="high" />
-    <meta property="og:type" content="website" />
+    {/* Schibsted Grotesk sets the name and every title above the fold, so it is preloaded; Newsreader follows. */}
+    <Font cssVariable="--font-display" preload />
+    <Font cssVariable="--font-text" />
+    <slot name="head" />
+    <meta property="og:type" content={type} />
     <meta property="og:site_name" content="Sai Bhandar" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={og} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Sai Bhandar, Business + CS @ CMU, beside a paused Sidequest frame at 0:04.5" />
+    <meta property="og:image:width" content={String(imageWidth)} />
+    <meta property="og:image:height" content={String(imageHeight)} />
+    {imageAlt && <meta property="og:image:alt" content={imageAlt} />}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={og} />
+    {imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
     <meta name="generator" content={Astro.generator} />
-    <script is:inline>document.documentElement.classList.add('js');</script>
+    {/* The js class gates the Play controls before first paint; the empty touch listener makes iOS Safari apply :active,
+        which carries every press answer in global.css. */}
+    <script is:inline>document.documentElement.classList.add('js'); document.addEventListener('touchstart', () => {}, { passive: true });</script>
+    {/* The page view transition (global.css, Motion): between home and a case study, the media frame the visitor
+        clicked becomes the case hero (and back). Only that pair gets a view-transition-name: pick() finds this page's
+        side of it (a case page's hero, only towards home; on home, the row of the case study on the other side), and
+        only when both ends are on screen and the arriving page's image is decoded; anything else is a plain cut, as
+        is case to case. The destination comes from the Navigation API, or from the last link clicked where that is
+        missing. Browsers without cross-document view transitions, and reduced motion, never get here. */}
+    <script is:inline define:vars={{ home }}>
+      const NAME = 'vt-media';
+      const path = (u) => { try { return new URL(u, location.href).pathname; } catch { return null; } };
+      const slugOf = (u) => /\/work\/([^/]+)\/?$/.exec(path(u) ?? '')?.[1] ?? null;
+      const here = slugOf(location.href);
+      const pick = (other) => {
+        if (here && other && path(other) !== home) return null;
+        const key = here ?? (other ? slugOf(other) : null);
+        return key ? document.querySelector('[data-vt="' + key + '"]') : null;
+      };
+      const seen = (el) => { const r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.top < innerHeight; };
+      const clear = () => { for (const el of document.querySelectorAll('[data-vt]')) el.style.viewTransitionName = ''; };
+      let last = null;
+      addEventListener('click', (e) => { const a = e.target instanceof Element ? e.target.closest('a[href]') : null; if (a) last = a.href; }, true);
+      addEventListener('pageswap', (e) => {
+        clear();
+        if (!e.viewTransition) return;
+        const el = pick(e.activation?.entry?.url ?? last);
+        if (el && seen(el)) el.style.viewTransitionName = NAME;
+      });
+      addEventListener('pagereveal', (e) => {
+        clear();
+        if (!e.viewTransition) return;
+        const from = window.navigation?.activation?.from?.url ?? document.referrer;
+        const el = from ? pick(from) : null;
+        const img = el?.querySelector('img');
+        if (el && img?.complete && img.naturalWidth > 0 && seen(el)) {
+          el.style.viewTransitionName = NAME;
+          e.viewTransition.finished.finally(clear);
+        } else {
+          e.viewTransition.skipTransition();
+        }
+      });
+    </script>
+    <script type="speculationrules" is:inline set:html={speculation} />
   </head>
   <body>
     <slot />
-    <div id="live" class="sr" aria-live="polite"></div>
-    <script>
-      import '../scripts/motion';
-    </script>
   </body>
 </html>

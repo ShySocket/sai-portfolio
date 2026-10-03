@@ -1,265 +1,341 @@
 ---
 name: Sai Bhandar portfolio
-description: Cue. A light instrument face with ink displays cut into it; rose lights only what is live or was just pressed.
+description: B, Editorial. A broadsheet index on paper white: a huge name, true black ink rules, Schibsted Grotesk over Newsreader, one signal orange.
 colors:
-  ground: "#eceef0"
-  ink: "#15171a"
-  ink-2: "#4b5157"
-  hover-tint: "#e1e4e7"
-  on-field: "#e9ecef"
-  on-field-2: "#a4abb2"
-  raise: "#26292e"
-  raise-hover: "#30343a"
-  track: "#6b7279"
-  ring-field: "rgba(233, 236, 239, 0.14)"
-  rose: "#c42b5f"
-  rose-press: "#a82350"
-  on-rose: "#ffffff"
-  selection: "#e5cbd6"
+  paper: "#fafaf8"
+  panel: "#ecece8"
+  ink: "#0b0b0b"
+  ink-2: "#55554f"
+  rule: "#0b0b0b"
+  hair: "rgba(11, 11, 11, 0.14)"
+  img-edge: "rgba(11, 11, 11, 0.08)"
+  accent: "#f0480e"
+  accent-ink: "#b83200"
+  accent-tint: "#f8d3c5"
+  focus: "#f0480e"
+  chart-1: "#3d3d3a"
+  chart-2: "#74746f"
+  chart-3: "#9b9b96"
+  chart-4: "#afafaa"
+  chart-5: "#c9c9c4"
 typography:
+  name:
+    fontFamily: "Schibsted Grotesk, Schibsted Grotesk fallback: Arial, sans-serif"
+    fontSize: "100cqi / 5.66 (199px at 1440, 63px at 390)"
+    fontWeight: 800
+    lineHeight: "0.86"
+    letterSpacing: "-0.04em"
   display:
-    fontFamily: "Funnel Display, Funnel Display Fallback, Arial, sans-serif"
-    fontSize: "64px"
-    fontWeight: 600
-    lineHeight: "64px"
-    letterSpacing: "-0.02em"
+    fontFamily: "Schibsted Grotesk, Schibsted Grotesk fallback: Arial, sans-serif"
+    fontSize: "clamp(40px, 4px + 10.9vw, 160px)"
+    fontWeight: 800
+    lineHeight: "0.9"
+    letterSpacing: "-0.04em"
   headline:
-    fontFamily: "Funnel Display, Funnel Display Fallback, Arial, sans-serif"
-    fontSize: "40px"
-    fontWeight: 600
-    lineHeight: "48px"
-    letterSpacing: "-0.01em"
+    fontFamily: "Schibsted Grotesk, Schibsted Grotesk fallback: Arial, sans-serif"
+    fontSize: "clamp(36px, 19.2px + 3.4vw, 64px)"
+    fontWeight: 800
+    lineHeight: "1"
+    letterSpacing: "-0.035em"
   title:
-    fontFamily: "Funnel Sans Variable, Funnel Sans Fallback, Arial, sans-serif"
-    fontSize: "24px"
-    fontWeight: 500
-    lineHeight: "32px"
-  body:
-    fontFamily: "Funnel Sans Variable, Funnel Sans Fallback, Arial, sans-serif"
-    fontSize: "17px"
+    fontFamily: "Schibsted Grotesk, Schibsted Grotesk fallback: Arial, sans-serif"
+    fontSize: "clamp(22px, 18px + 0.4167vw, 24px)"
+    fontWeight: 800
+    lineHeight: "1.3333"
+    letterSpacing: "-0.015em"
+  lede:
+    fontFamily: "Newsreader, Newsreader fallback: Times New Roman, serif"
+    fontSize: "clamp(20px, 18.4px + 0.35vw, 22px)"
     fontWeight: 400
-    lineHeight: "28px"
-    fontFeature: "tnum"
-  label:
-    fontFamily: "Funnel Sans Variable, Funnel Sans Fallback, Arial, sans-serif"
-    fontSize: "14px"
+    lineHeight: "32px at 22px (1.4545)"
+  body:
+    fontFamily: "Newsreader, Newsreader fallback: Times New Roman, serif"
+    fontSize: "clamp(18px, 17.12px + 0.2vw, 19px)"
+    fontWeight: 400
+    lineHeight: "30px at 19px (1.5789)"
+  ui:
+    fontFamily: "Schibsted Grotesk, Schibsted Grotesk fallback: Arial, sans-serif"
+    fontSize: "16px"
+    fontWeight: 600
+    lineHeight: "24px (32px in link rows)"
+  meta:
+    fontFamily: "Schibsted Grotesk, Schibsted Grotesk fallback: Arial, sans-serif"
+    fontSize: "15px"
     fontWeight: 500
-    lineHeight: "20px"
-    fontFeature: "tnum"
+    lineHeight: "22px"
+  code:
+    fontFamily: "ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontSize: "0.86em"
+    fontWeight: 400
 rounded:
-  tick: "4px"
-  mark: "1px"
-  r: "10px"
+  none: "0"
 spacing:
-  "1": "8px"
-  "2": "16px"
-  "3": "24px"
-  "4": "32px"
-  "5": "40px"
-  "6": "48px"
+  "1": "4px"
+  "2": "8px"
+  "3": "12px"
+  "4": "16px"
+  "5": "24px"
+  "6": "32px"
+  "7": "48px"
   "8": "64px"
-  "12": "96px"
-  "16": "128px"
+  "9": "96px"
+  "10": "128px"
 components:
-  key-play:
-    backgroundColor: "{colors.rose}"
-    textColor: "{colors.on-rose}"
-    typography: "{typography.body}"
-    rounded: "{rounded.r}"
-    padding: "8px 20px 8px 24px"
+  button-primary:
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.ink}"
+    typography: "{typography.ui}"
+    fontWeight: 700
+    rounded: "{rounded.none}"
+    padding: "0 24px"
     height: "48px"
-  key-play-hover:
-    backgroundColor: "{colors.rose-press}"
-  key-watch:
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.r}"
-    padding: "8px 20px 8px 24px"
-    height: "48px"
-  key-watch-hover:
-    backgroundColor: "{colors.hover-tint}"
-  copy-key:
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.r}"
-    padding: "0 14px"
-    height: "44px"
-  evidence-key:
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.r}"
-    padding: "4px 10px"
-    height: "28px"
-  field:
+  button-primary-hover:
     backgroundColor: "{colors.ink}"
-    textColor: "{colors.on-field}"
-    rounded: "{rounded.r}"
-  transport-key:
-    backgroundColor: "{colors.raise}"
-    textColor: "{colors.on-field}"
-    rounded: "{rounded.r}"
-    size: "44px"
-  transport-key-hover:
-    backgroundColor: "{colors.raise-hover}"
-  tooltip:
-    backgroundColor: "{colors.raise}"
-    textColor: "{colors.on-field}"
-    typography: "{typography.label}"
-    rounded: "{rounded.r}"
-    padding: "8px 12px"
-  index-cell:
-    backgroundColor: "{colors.ink}"
-    rounded: "{rounded.r}"
-    width: "96px"
-    height: "56px"
-  index-row-hover:
-    backgroundColor: "{colors.hover-tint}"
+    textColor: "{colors.paper}"
+  text-link:
+    textColor: "{colors.ink}"
+    underline: "max(2px, 0.06em) {colors.accent}, offset 0.24em"
+  text-link-hover:
+    textColor: "{colors.accent-ink}"
+    underline: "{colors.accent-ink}"
+  play-control:
+    textColor: "{colors.ink}"
+    typography: "{typography.meta}"
+    fontWeight: 600
+    underline: "2px {colors.accent}"
+    hitArea: "44px"
+  contact-deck:
+    typography: "{typography.title}"
+    fontWeight: 600
+    lineHeight: "32px"
+  contact-footer:
+    typography: "{typography.headline}"
+    rule: "2px {colors.rule} above"
+  frame:
+    backgroundColor: "{colors.panel}"
+    aspectRatio: "16 / 9"
+    edge: "inset 1px {colors.img-edge}"
+    rounded: "{rounded.none}"
+  facts-row:
+    label: "{typography.meta}"
+    value: "{typography.ui}"
+    separator: "1px {colors.hair}"
+    padding: "16px 0"
+  caption:
+    typography: "{typography.meta}"
+    textColor: "{colors.ink-2}"
+    maxWidth: "552px"
+    gapAbove: "12px"
+  award:
+    typography: "{typography.meta}"
+    fontWeight: 600
+    iconColor: "{colors.accent}"
+    iconSize: "16px"
 ---
 
 # Design System: Sai Bhandar portfolio
 
-This file records the shipped Cue design. The tokens in the frontmatter are the ones in `src/styles/global.css` `:root`, and that stylesheet is the source of truth: when the two disagree, fix this file. Product rules (audience, fixed copy, project order, performance, accessibility) live in [PRODUCT.md](PRODUCT.md) and are not repeated here.
+This file records direction B, Editorial, as frozen for v3 (picked by Sai on 2026-10-01 from the prototype in `autopilot/artifacts/sai-portfolio-v3/directions/B/`). The tokens in the frontmatter are the ones in `src/styles/global.css` `:root`, and that stylesheet is the source of truth: when the two disagree, fix this file. Slot widths and every `sizes` string come from `src/styles/slots.ts`. Product rules (audience, fixed copy, project order, performance, accessibility) live in [PRODUCT.md](PRODUCT.md); the information architecture and acceptance tests live in the v3 brief. Neither is repeated here.
 
 ## Overview
 
-**Creative North Star: "The Instrument Face"**
+**Creative North Star: "The Broadsheet Index"**
 
-The page is one light instrument face with dark displays cut into it. Light means read or press. Ink means this plays or proves: every clip, screenshot, thumbnail and played node sits in an ink field cut into the face. Rose lights only what is live or was just pressed. Every project is a loop between a press and the machine's answer, so every control answers within a frame, and every proof (a clip frame, a cue, a screen region) has its own address that lands instantly.
+The site is set like the front page of a broadsheet. The name runs the full measure at the top in black 800 weight, a 2px rule cuts under it, and the work follows as an index: five rows of identical shape, each a framed piece of proof on the left and its title, one claim, its techniques and its links on the right. A case study is a feature: a huge title, a full width rule, the lede beside a rail of facts, the hero, then Problem, Approach and Outcome, each opened by a rule with its head in the margin. Structure comes from ink rules and the column grid, not from boxes.
 
-Density is calm and editorial: one 8px lattice, generous space between projects, text held to a reading measure, and media given the width. There is one light theme; the footage supplies the dark. Everything is opaque and in place at first paint, and nothing enters on scroll.
+Paper white because recruiters read in daylight on laptops; true black because the type is the design; one signal orange because the page needs exactly one thing that says "this is live": the underline of every link, the focus ring, the award mark and the single filled button on a case study. Nothing moves on its own except the home row 1 loop. Everything is in place at first paint, with or without JavaScript.
 
-**Key Characteristics:**
-- Light ground, ink fields, one rose accent with a fixed list of uses.
-- Two families from one superfamily: Funnel Display for names, Funnel Sans for everything else.
-- A fixed-cell transport on every clip, with measured cue ticks that each have an address.
-- Proof pinned to coordinates: a tick in a clip, or a 1px ink outline on a screen region, with an evidence key in the note that cites it.
-- Flat: no shadows, no gradients, no glass; edges are 1px rings and hairlines.
+**Key characteristics:**
+- A name set to the measure (ink width 5.652em, sized in container units so it spans the column exactly at every width).
+- One 12 column grid (8 under 1024, 4 under 640); every left edge lands on a column line, on both page types.
+- Schibsted Grotesk for everything that names or labels, Newsreader for everything that is read.
+- Rules, not cards: a 2px rule under the name and over the footer, 1px ink rules opening sections, hairlines between items.
+- Square corners everywhere. Flat: no shadows, no gradients, no glass.
 
 ## Colors
 
-A cool neutral face and an ink display colour, with a single rose that is rationed.
+A warm-neutral paper, near-black ink and one orange in three tones: the accent itself for graphics, a darker tone for orange text, a tint for selection.
 
 ### Primary
-- **Signal Rose** (`rose`): the one accent. It is used only for the Play key's fill, the progress fill while playing, the focus ring, the award glyph, the 600ms landing cue on a title's underline, the just-pressed tick mark, and the selection tint inside fields. 4.68:1 on the ground and 3.30:1 on ink.
-- **Pressed Rose** (`rose-press`): the Play key's hover and press fill (white on it is 6.95:1).
-- **On Rose** (`on-rose`): the Play key's label.
-- **Rose Selection** (`selection`): `::selection` on the ground, ink text on it (11.84:1).
+- **Signal Orange** (`accent`, #f0480e): graphics only. Link underlines, the focus ring (3.56:1 on paper, above the 3:1 non-text floor), the award mark, the filled button (ink label on it 5.28:1), the Play control's underline. Never text.
+- **Orange Ink** (`accent-ink`, #b83200): the accent when it has to be text, such as a hovered link (5.75:1 on paper, 5.07:1 on panel).
+- **Orange Tint** (`accent-tint`, #f8d3c5): `::selection` (ink on it 14.17:1).
 
 ### Neutral
-- **Instrument Ground** (`ground`): the page, and the browser chrome (`theme-color` is read from this token at build time).
-- **Display Ink** (`ink`): all text on the ground (15.44:1), every media field, the index thumbnail cells, and the 1px edges that border the progress fill.
-- **Graphite** (`ink-2`): secondary text (tags, kickers, the nav address, captions' provenance) and the 1px rings of the outlined keys (6.91:1 on the ground).
-- **Hover Tint** (`hover-tint`): the fill an outlined key or an index row takes on hover and while pressed (ink on it is 14.07:1).
-- **On Field** (`on-field`): text, timecodes and tick marks inside ink fields (15.14:1 on ink).
-- **On Field Dim** (`on-field-2`): idle state words and the paused progress fill inside fields (7.74:1 on ink).
-- **Raised Key** (`raise`, `raise-hover`): transport and cue keys and tooltips inside fields; the hover step is for fine pointers and presses.
-- **Track** (`track`): the 2px unfilled rail (3.68:1 on ink).
-- **Field Edge** (`ring-field`): a 1px inner edge on a dark screenshot inside a field (Lazer Shooter).
+- **Paper** (`paper`, #fafaf8): the page, and the browser chrome (`theme-color` is read from this token at build time by `Base.astro`).
+- **Ink** (`ink`, #0b0b0b): all primary text (18.83:1 on paper), the structural rules, the button hover fill.
+- **Ink 2** (`ink-2`, #55554f): Meta text: the technique line, captions, facts labels, table heads (7.18:1 on paper, 6.34:1 on panel).
+- **Panel** (`panel`, #ecece8): the letterbox inside a media frame.
+- **Hair** (`hair`, ink at 14%): separators between rows, facts and table rows. Decorative only (1.35:1).
+- **Image edge** (`img-edge`, ink at 8%): a 1px inner edge on every frame so pale screenshots do not dissolve into the paper.
+- **Chart greys** (`chart-1` to `chart-5`): data bands and series in charts, darkest to lightest. Never text.
 
 ### Named Rules
-**The Rationed Rose Rule.** Rose appears only in the seven uses listed under Signal Rose. It never sits on footage, never colours a heading or body text, and there is no second accent.
+**The One Orange Rule.** The accent appears only as an underline, the focus ring, the award mark, the Play underline, the button fill and the selection tint. It never colours a heading, body text, a background area or a piece of media, and there is no second hue.
 
-**The Ink Means Proof Rule.** Ink fields hold only what plays or proves: clips, screenshots, thumbnails, and the flow chips for footage in and a level out. Text and controls that are read or pressed sit on the light face.
+**The Ink Is the Structure Rule.** A 1px or 2px ink rule means "a new part starts here" (masthead, work index, intro, each section, footer). Between items of the same kind the separator drops to a hairline.
 
 ## Typography
 
-**Display Font:** Funnel Display 600 (with Funnel Display Fallback, Arial at size-adjust 99.7%)
-**Body Font:** Funnel Sans, variable weight, used at 400, 500 and 600 (with Funnel Sans Fallback, Arial at size-adjust 101.8%)
+**Display and interface:** Schibsted Grotesk Variable (weights 400 to 900; used at 500, 600, 700 and 800), latin subset, self-hosted through Astro's Fonts API and preloaded because it sets everything above the fold.
+**Reading:** Newsreader Variable (weights 200 to 800; used at 400 and 500), the 16pt master, which is the optical size of 18 to 22px text. Latin subset, not preloaded.
+**Code:** the platform monospace (`ui-monospace`, SF Mono, Menlo, Consolas), for file names and commands inside prose only.
 
-**Character:** One superfamily in two cuts: the display cut gives the name and titles a machined, compact presence, and the sans carries body, UI and figures without changing voice. Two latin woff2 files, both preloaded; figures are tabular everywhere (timecodes never jitter).
+Both faces ship one latin woff2 each (47 KB and 58 KB) with Astro's metric-matched local fallbacks (Arial at 104.5%, Times New Roman at 105.5%), so the swap does not move the layout. No italic files ship and `font-synthesis` is off: emphasis is weight (Newsreader 500), never a fake oblique.
+
+**Character:** a newspaper pairing. The grotesk is dense and black at display sizes and plain at 15px; the serif makes the claims and prose read as sentences rather than interface.
 
 ### Hierarchy
-- **Display** (600, 64/64 at 768px and up, 48/56 below, tracking -0.02em): the name. Capped by its own column (24cqi) so it never breaks mid-word with 200% text.
-- **Headline** (600, 40/48 at 768px and up, 32/40 below, tracking -0.01em): project titles, capped at 17cqi. The closing email address uses the display cut at 64/64 (40/48 below 768px, 24/32 below 360px), capped at 12.5cqi.
-- **Title** (Sans 500, 24/32): the tagline, one run, so "CMU" is at equal weight.
-- **Body** (Sans 400, 17/28): summaries and notes, at most 58ch. Note lead-ins and the claim line under each title are 600; the Play and Watch key labels are 600 and View code 500, all at body size.
-- **Label** (Sans 500, 14/20): tags, kickers, captions, timecodes, state words, tooltips, the copy key, evidence keys, nav links and the footer. The award line is 600.
+- **Name** (Schibsted 800, line height 0.86, tracking -0.04em): `Sai Bhandar` on home only, sized `100cqi / 5.66` so its ink spans the measure (199px at 1440, 63px at 390), pulled left by its 0.018em side bearing so the ink sits on the column line.
+- **Display** (800, 40 to 160px, 0.9, -0.04em): each case study's title. "Lazer Shooter", the longest, fits one line from 320 up.
+- **Headline** (800, 36 to 64px, 1.0, -0.035em): home row titles, the next project title, the footer contact row.
+- **Title** (800, 22 to 24px, 32px line, -0.015em): section heads. The tagline uses it at 700, the home contact column at 600.
+- **Lede** (Newsreader 400, 20 to 22px, 32px line at 22): the About, every row claim, each case study lede, the next project claim.
+- **Body** (Newsreader 400, 18 to 19px, 30px line): prose, at most 552px (about 60 characters). H3 is Schibsted 700 at body size.
+- **UI** (Schibsted 600, 16px): text links in rows, the header, facts values (500), the button (700).
+- **Meta** (Schibsted 500, 15px, 22px line, Ink 2): techniques, captions, facts labels, table heads, the award line (600, ink). Nothing on the site is smaller than 15px.
 
-Sizes step at 768px; there is no fluid type, so every line stays on the 4px sub-step. Headings use `text-wrap: balance`, paragraphs and list items `pretty`.
+Display and headline sizes are fluid between 390 and 1440; the reading sizes move by at most 2px. Headings, captions, claims and the tagline use `text-wrap: balance`; paragraphs, list items and facts values use `pretty`. Text boxes are trimmed to cap height and baseline (`text-box: trim-both cap alphabetic`) wherever a gap is measured from ink, so the spacing scale is what the eye sees.
 
 ### Named Rules
-**The Five Steps Rule.** The ramp is 64, 40, 24, 17 and 14 (with 48 and 32 as the small-screen name and title steps). A new size needs a reason that one of these cannot serve.
+**The 15px Floor Rule.** Meta is 15px and nothing goes below it. A label that does not fit at 15px gets shorter, not smaller.
+
+**The No Tabular Figures Rule.** Schibsted Grotesk's `tnum` also sets the period, comma and colon on the figure width, which opens holes in "1.54 m/s" and in comma lists. Figures stay proportional everywhere.
 
 ## Layout
 
-- **Lattice:** 8px (`--u`), with a 4px sub-step for line heights only. Steps used: 8, 16, 24, 32, 40, 48, 64, 96, 128, all in rem.
-- **Frame:** content at most 1600px, margins 16px below 768px and 32px from 768px; 12 columns with 32px gutters where a grid applies.
-- **Measure:** 58ch for running text (about 72 characters of Funnel Sans at 17px).
-- **Fields:** at most 1120px; the Sidequest stage at most 1152px. A well is a whole number of lattice units wide and 16:9 rounded to the lattice (cropping at most 1.8%). Below 1024px the stage and the pair's clips run edge to edge with square corners.
-- **Space between projects:** 80px below 768px, 96px from 768px, 128px from 1200px. Space above a heading is always larger than space below it.
-- **The band (first project):** below 1024px it stacks name, Sidequest head, stage, body (notes, then the flow) and the index. From 1024px a 12-column subgrid puts the head in a text rail beside the stage; from 1200px the name, head and body run down columns 1 to 4, with the stage in 5 to 12 and the index under it. The band's breakpoints are container widths in rem, so 200% text keeps it stacked.
-- **Families after the band:** the phone entry (from 1200px: head and body in columns 1 to 6, phone and QR card in 7 to 12), the spread (from 1200px: head and body in columns 1 to 7, the spread across all 12 after the body), and the pair (from 1200px: Sunrise in 7 columns, GyroBlaster in 5, on a shared subgrid so titles, key rows and fields line up).
-- **Order:** DOM, reading and focus order are the same at every width: head (title, award, claim, tags, keys), the proof, then the body (summary, notes).
+### Grid
+| Width | Columns | Margins | Gutters | Container |
+|---|---|---|---|---|
+| under 640 | 4 | 16 | 16 | fluid |
+| 640 to 1023 | 8 | 32 | 24 | fluid |
+| 1024 and up | 12 | 48 | 24 | 1128 max (columns of 72), reached at a 1224 viewport |
+
+Margins grow to the safe-area insets on notched phones (`viewport-fit=cover`). The grid is in px, not rem, because its slots are image widths and must not grow with text zoom; type and spacing are in rem.
+
+### Slots and density
+Every image, poster and video is drawn at or below half its native width at 1440 (density 2.0 or more on a 2x screen) and at 1.5 or more at 320, 390, 768 and 1024. The slots, from `src/styles/slots.ts`:
+
+| Slot | Columns at 1024+ | CSS px at 1440 | Smallest source | Under 1024 |
+|---|---|---|---|---|
+| Wide | 4 to 12 | 840 | 1680 | full width |
+| Figure (home rows) | 1 to 6 | 552 | 1104 | cols 1 to 4 of 8; full width under 640 |
+| Figure (case) | 4 to 9 | 552 | 1104 | never wider than 552 |
+| Detail | 3 columns, three across | 264 | 528 | a third of the column |
+| Prose, captions | 4 to 9 | 552 max | | full width, 552 max |
+
+Densities of the v3 media at 1440: Sidequest poster 3.48 in Figure and 2.29 in Wide; loop video 2.32; ReliefIQ map 3.10; Sunrise scene 2.01 (the binding case, which is why the case Figure never passes 552); GyroBlaster screen 2.03; Lazer screens 2.0 (they ship 1x, 1.5x and 2x of the width they draw at, 206 on home and 334 in the hero, from 1179 px captures).
+
+### Home anatomy
+- **Masthead:** 40px top (32 from 640, 24 under), the name, 24px to a 2px rule (16 under 640), 32px to the deck (24 under 640).
+- **Deck:** from 1024, tagline and About in columns 1 to 6, the contact column (Résumé, GitHub, LinkedIn, Email) in 8 to 12 on the same 32px line grid, so Résumé sits on the tagline's baseline and each next link on an About line. From 640 to 1023 the contact row runs horizontally 24px under the About; under 640 it sets as two columns on column lines 1 and 3 (Résumé, GitHub over LinkedIn, Email), because one line does not fit every phone width and a wrap would leave one word alone.
+- **Work index:** 64px under the deck (48 under 1024), a 1px ink rule, then five rows padded 48 (40 from 640, 32 under), hairlines between them. Media in columns 1 to 6, text in 8 to 12 (1 to 4 and 5 to 8 from 640; stacked under 640 with the title 24 under the media).
+- **Row text:** one top aligned flow. Title cap height on the media's top edge, claim 24 under the title's baseline, techniques 16, award 8, links 24. Never pinned to the media's bottom.
+- **Footer:** the section gap, then the contact row at headline size under a 2px rule, its second and last appearance. From 1024 it is one line; under 1024 it sets as two columns on the grid (column lines 1 and 3 under 640, 1 and 5 from 640), Résumé and GitHub over LinkedIn and Email, because one line does not fit and a wrap left Email alone (768) or a ragged second line (390). Under 360 two columns are narrower than LinkedIn at 36px, so it wraps as words. The columns are half-width flex items that never shrink below their word, so with wider text spacing (WCAG 1.4.12) or larger text a word that outgrows its column takes its own line instead of running into the next.
+
+### Case study anatomy
+- **Header:** the name (linking home) and the contact row on one line from 640, a 1px ink rule under; at most 73px tall.
+- **Intro:** 64px (48 under 1024) to the display title, 64 (48) from its baseline to a full width ink rule. The lede (columns 4 to 10, 552 max) and the facts rail (1 to 3) both start 24 below that rule, cap height to cap height. The hero (Wide, 4 to 12) sits 48 under the lede. The rail is sticky only at 1024 wide and 720 tall or more. Under 1024 the rail sits under the lede with its own ink rule, label and value side by side (label in column 1 and value in 2 to 4 under 640, as direction B draws it at 390; label in 1 and 2 and value in 3 to 8 from 640), then the hero. Under 360 they stack, because the widest button needs more than three columns there.
+- **Sections:** the section gap (96, 64 under 1024), a 1px ink rule, the head 24 below it in columns 1 to 3, the body in 4 to 12 as a subgrid: prose and Figure in 4 to 9, Wide and strips in 4 to 12. Under 1024 the head stacks 24 above the body.
+- **Approach subsections:** 64 apart; H3, 12, prose, 32, figure; captions 12 under media.
+- **Next project:** a section like the others with the next title at headline size, its claim 32 under (the title is a link and its underline hangs 12px below the baseline), then the "All work" link 24 under that.
+
+### Rhythm
+One spacing scale: 4, 8, 12, 16, 24, 32, 48, 64, 96, 128. Inside a group the steps are 4 to 16; between groups 24 to 48; between parts 64 to 96. Above a section or sub head there is at least twice the space below it.
+
+### Fold budgets (measured on the specimen)
+- 1440 by 900: name, tagline, the whole About, all four contact links, and row 1's media, title, claim, techniques and links (media bottom at 857). Five tab stops before row 1's claim.
+- 390 by 844: name, tagline, About, the contact row and row 1's whole media (bottom at 718 with a 7 line About).
 
 ## Elevation & Depth
 
-Flat by construction. There are no shadows, gradients, blurs or glass. Depth is one step only: ink fields are cut into the light face, and raised keys sit one tone lighter than the ink around them. Edges are drawn, never cast: outlined keys carry a 1px inset ring (Graphite, Display Ink on hover), screen regions a 1px ink outline, list separators a 1px hairline border. The only z-index on the page is the tooltip's (1).
+Flat. No shadows, gradients, blurs or glass. Depth is never cast; it is drawn: rules (2px ink for the page's major cuts, 1px ink for parts, hairlines between items) and the frame's 1px inner image edge. There is no z-index on the page.
 
 ### Named Rules
-**The Cut-Not-Lifted Rule.** Nothing floats above the page. If something needs separation, it is cut into the face (an ink field) or edged with a 1px ring, never shadowed.
+**The Drawn Not Cast Rule.** If something needs separating, rule it. If it needs grouping, move it closer. Never lift it with a shadow or put it in a card.
 
 ## Shapes
 
-One corner: a firm 10px radius on fields, wells, keys, thumbnail cells, cards and tooltips; 4px on tick hit areas and region outlines, and 1px on the 2px tick marks. A field that touches both viewport edges drops to square corners. No pills: keys are rounded rectangles. Separators in lists (kickers, caption facts, the closing location line) are drawn 1px hairlines 12px tall, never middots, and the one that would start a line is clipped away.
+Every corner is square (`--radius: 0`): frames, the button, the focus ring. No pills, no rounded cards. Media frames are 16:9 (Details 9:16) and the panel shows as a letterbox when a source is not exactly that shape.
 
 ## Components
 
-### Keys
-Tiered by what the link proves, all at the title so they sit in the first glance.
-- **Play key** (`key-play`): a live build you can play. Filled rose, white label at 600, trailing arrow glyph, 48px tall, 10px corners. Full width below 768px. Hover and press: Pressed Rose.
-- **Watch key** (`key-watch`): a recording. Same size, no fill, a 1px Graphite inset ring; hover and press add the Hover Tint and darken the ring to ink, in step.
-- **View code**: the source, as an underlined text link (1px underline at 40% ink, 6px offset; 2px ink on hover and press), at least 44px tall.
-- **Copy email key** (`copy-key`): an outlined 44px key (48px at the close) that copies in place. Its labels (Copy email, Copied, Copy failed) share one grid cell and crossfade, so it never resizes; below 400px the nav key reads "Email". Without JS it is a mailto link.
-- **Evidence key** (`evidence-key`): a 28px outlined chip under a note that names where its proof is ("Show 0:04.5 in clip"). It jumps to the address; hovering or focusing the note draws a 2px ring on what it governs (On Field inside fields, ink on the ground, never rose).
+### Contact row
+One component in three sizes, always in the order Résumé, GitHub, LinkedIn, Email: the deck (title role at 600, a 32px line), the case study header (UI, 24px line), the footer (headline). Each link is an inline block so its line box is its hit area.
 
-### Press, hover and focus
-- Every pressable scales to 0.97 while pressed (140ms, ease-out) and also shows its hover fill or underline while pressed, so touch and reduced motion still get a colour answer. Wide surfaces (index rows, the display-size closing address) press at 0.99 so their edges move about 4px, not 14px. Under reduced motion the scale is dropped. A cue tick takes no scale; its mark turns rose instead.
-- Hover fills live only under `(hover: hover) and (pointer: fine)`.
-- Focus is a 2px rose outline offset 2px. Inside fields it is a ring of ink, rose and a 1px On Field edge, so it holds on footage and never touches a raised key. Focus is always instant.
-- Disabled transport keys sink under a 62% ink veil drawn inside the key, so their focus ring keeps full strength.
+### Work row (home)
+`li.work__item` (the row padding and the hairline) around `div.work__body.grid`, the part a press scales: the frame (a link to the case study, out of the tab order and hidden from assistive tech, since the title links to the same place), then the text flow: H2 title (a link with a transparent underline that turns orange on hover, or while the media or "Case study" is hovered or pressed), the claim, the techniques line, the award, the links row ("Case study", plus Play or Watch). Row 1's loop moves on its own, so it carries the Play/Pause control 12px under its media, on the media's column line, in the figure caption's style (WCAG 2.2.2); the text column spans both lines (an auto track, then a 1fr one that a row without a caption leaves empty), so the title offset is the same in every row and every row ends 48 (40, 32) under its own content.
 
-### Fields and the transport (signature)
-- **Field** (`field`): an ink panel with 10px corners holding a well (the pinned still under the video), the transport, and a caption.
-- **Transport**: one 64px row of fixed cells aligned to the well: the play key (a 44px raised key whose play, pause and loading glyphs crossfade in one cell), the timecode (at least 88px), the state word (at least 120px), then the previous-cue key, the track and the next-cue key. State changes only text inside a cell, so nothing shifts; under user text spacing the readout cells grow and the track gives way. In fields under 34rem (36rem with cue keys) it becomes a 56px two-row layout with the readout above the track; under 19rem (200% text on a phone) the cells wrap into rows in DOM order. A clip that could not load drops its readout and offers its live build instead.
-- **Track and cues**: a 2px Track rail with a 4px progress fill edged in ink (On Field Dim when paused, rose when playing). Each cue is a 24px tick with a 2px by 12px mark and its own address; ticks closer than 24px become unfocusable marks. A loading glyph shows only for a wait the user asked for or one that lasts past 250ms.
-- **Tooltip** (`tooltip`): a raised label above its tick with the timecode in On Field Dim and the caption below. Opens after 200ms on mouse hover (instantly for 600ms after one closes), at once on keyboard focus, and at once when a cue is held by a tap, a finger on a cue key, an evidence key or a deep link; it stays inside the track and is dismissed with Esc.
-- **Caption**: what is on screen in plain words, then provenance in On Field Dim as a hairline list.
+### Frame
+A 16:9 panel with a 1px inner edge. Its picture, image or video fills it absolutely, so a video layered after its poster covers it exactly; media are `object-fit: contain`, except a still within 2% of 16:9, which fills the frame (`cover`, trimming at most 1% per edge) rather than showing hairline letterbox bars. `.frame--screens` centres phone screens at full height less 24px (16 under 1024), each drawn through a window centred on the screen when the data gives one (`Screens.view`): Lazer Shooter's 1179 by 2556 captures show their middle 1179 by 1500, which holds every control, as in the B prototype, so each screen draws 1.7 times as wide as the whole screen would. `.frame--tall` is 9:16.
 
-### Flow
-The first note's chain as an ordered list under the notes: ink chips for what plays (footage in, a level out), text steps between, 20px arrows, and parallel parts hanging from their step on a 1px hairline. Vertical by default; horizontal once the list has 52rem of its own.
+### Figure and caption
+A frame plus a Meta caption 12px under it, at most 552px wide, balanced. A video's caption starts with the Play control (`PlayButton.astro`), run in at the start of the first line so every caption line starts on the column line: Meta at 600 with a 2px orange underline under the word and a 44px hit area made of padding that negative margins give back, so the caption keeps its rhythm. "Play" and "Pause" share one grid cell, so the button is always as wide as "Pause" and the caption never moves when it toggles. It shows from first paint under the head's `js` class (never revealed by the late script, which would shift the caption), and not at all without JS or after a video fails, where the hero keeps its native controls.
 
-### Index
-The projects' own proof as an inventory, under the stage. Each row is one jump link at least 72px tall: a 96 by 56px ink cell with the thumbnail at its true aspect (`index-cell`), the underlined title at 600, the kicker as a hairline list in Graphite, the award where there is one, and a 20px kind glyph from 768px (rose for the award). Hover and press fill the row with the Hover Tint (`index-row-hover`). A narrow index (200% text) drops the cell and keeps every word.
+### Facts rail
+A `dl` of rows, always in the order Role, Team, When, Stack, Links; a row with no sourced value is left out rather than filled (ReliefIQ has no public link, so no Links row): label in Meta, value in UI at 500, 12px between when stacked (the same ink gap as between the value's own lines), rows 16px apart with hairlines. The Links row holds the page's only filled button and any text links. For Lazer Shooter a QR code (160px) follows, shown only to fine pointers; it overhangs empty paper on the left by its 4-module quiet zone so the code's edge sits on the column line.
 
-### Phone, spread and pair
-- **Phone**: the Lazer Shooter screenshot is itself the field, 256 by 552px, with a 1px Field Edge. A QR card (outlined, 160px code) sits beside it for fine pointers from 640px.
-- **Spread**: ReliefIQ's three screens in an ink field with each proof region outlined in 1px ink, then those regions as crops at about 1x so their text stays at least 14px. Below 768px it runs edge to edge and pairs each screen with its crop.
-- **Pair**: Sunrise and GyroBlaster side by side from 1200px, each head, field and body like every other entry.
+### Button
+One per case study, none on home: orange fill, ink label at 700, 48px tall, 24px side padding (16 from 1024 to 1099, where the rail is 214 to 233px and "Play on your phone" needs 219), square. One line at default sizes; with a larger default font it wraps inside its column, never past it. A transparent 2px border, inside the 48px, becomes its outline in forced colours. Hover (fine pointers) and press (every pointer): ink fill, paper label. Press: scale 0.97.
 
-### Navigation
-A static 56px row: the name (unmarked at rest, underlined on hover and press), a Projects link, and from 768px the address as selectable text beside the copy key. Not fixed; nothing follows the scroll.
+### Text link
+Ink text, a 2px (0.06em at large sizes) orange underline 0.24em below the baseline (0.12em on headline sized links). Hover (fine pointers) and press (every pointer): Orange Ink text and underline. A link never scales.
+
+### Award
+Meta at 600 in ink with a 16px drawn medal in orange before it.
+
+### Table
+Real rows: the head in Meta over a 1px ink rule, the row labels in Newsreader, values right aligned in Schibsted 700 at lede size, hairlines between rows, the caption under the table.
+
+### Chart
+Inline SVG in the chart greys with ink for the series that matters; labels in Schibsted 500 at Meta size, in user space that no viewBox scales. The level strip labels its surfaces in place from 640 (leaders for labels that do not fit their band, laid out at build time for 576px of 15px labels, each as near its band's centre as it can sit, so neighbouring narrow bands never put two leaders side by side) and with a swatch key under 640, or wherever the chart is narrower than 38.4em of its labels (a larger default font). Its label rows sit in em under the bands, so they spread as the text grows. In forced colours, chart ink takes `CanvasText` and chart greys `GrayText`, since contrast themes keep SVG paint.
+
+### States and browser surfaces
+- Focus: a 2px orange outline offset 3px on every focusable, and on a video while any of its native controls has focus.
+- Forced colours (Windows contrast themes): the system palette repaints everything but SVG paint and the flow diagram's drawn markers, so the charts and the diagram set `CanvasText` and `GrayText` themselves, and the button keeps its box through its transparent border.
+- Selection: Orange Tint under ink. Caret and form accents: orange. Scrollbar: Ink 2 on paper.
+- Hover lives only under `(hover: hover) and (pointer: fine)`.
+- Share card and icons (`node scripts/og.mjs`, run after a token, font or title change): `public/og.jpg` is the home masthead at 1200 by 630, the name to the measure over a 2px rule, the tagline and the five titles beside the Sidequest poster, the ink centred vertically; home and Lazer Shooter share it, the other case studies use their hero frame. The favicon and touch icon are a paper "S" in Schibsted Grotesk 800 on an ink square.
 
 ### Motion
-Tokens in `:root`: one curve (`--ease-out`, cubic-bezier(0.23, 1, 0.32, 1)) for presses, tooltips and state crossfades, plain `ease` for colour; press 140ms, hover 150ms, state 150ms, tooltip 125ms, landing cue 600ms (a colour fade only), loading turn 700ms. Only transform and opacity move. Seeks, cue steps, jumps and focus are instant. The full inventory is in the polish-7c motion inventory.
+One authored moment: the home row 1 loop, muted, in view, never under reduced motion or Save-Data. Everything else answers the visitor, and nothing runs longer than 200ms:
+- **Tokens.** `--ease-out` cubic-bezier(0.23, 1, 0.32, 1) for presses, the poster fade and the page morph; plain `ease` (`--ease-colour`) for colour, as hover and colour changes want. `--dur-colour` 150ms (link and underline colour, button fill), `--dur-press` 160ms (press scale), `--dur-state` 200ms (poster to video), `--dur-move` 200ms (page morph).
+- **Hover** (fine pointers only): links and Play turn Orange Ink; the button fills ink; a row's title takes its orange underline when the title, the media or "Case study" is hovered (its text stays ink: orange at 64px is too loud for something seen this often).
+- **Press** (every pointer): the hover colours while held, so touch gets the same answer, and no grey tap flash. Scale 0.97 on the button and Play; 0.99 on a home row's body when its media, title or "Case study" is pressed, with a fine pointer only (on a phone a finger starting a scroll on the media would make the row shimmer). Text links never scale.
+- **Video** (`src/scripts/video.ts`). One intent per video (none, auto, user-play, user-pause); the label follows the intent, never media events, and swaps instantly (it answers a click or a key). The page only pauses for the system (under a quarter in view, tab hidden) and resumes what the intent still wants, so a visitor's Pause is never overridden; on home it also holds through a reload in the same session. The loop is armed after load and an idle moment, so no video byte competes with the first paint. Heroes drop their native controls with JS: the caption button or a click on the frame toggles. A video stays hidden until its first frame is on screen, then fades in over its poster in 200ms (GyroBlaster's and Sunrise's posters are later frames, so the start dissolves in instead of jumping). A failed video turns static: the poster, native controls on a hero, no button.
+- **Page morph** (cross-document view transition, no router script). Between home and a case study the media frame the visitor clicked moves and scales into the case hero, and back, in 200ms on `--ease-out`; the rest of the page cuts, because crossfading two pages of 160px type only ghosts them. The inline script in `Base.astro` names only that pair (`vt-media`), and only when both ends are on screen and the arriving image is decoded; anything else, and case to case, is a plain cut, with no layout shift. Inside the moving frame there is no crossfade: the arriving picture scales from the first frame (Lazer Shooter's screens sit a fixed 24px inside frames of two sizes, so two copies would never line up). Speculation rules prerender home and the case studies on hover intent in Chrome, so the hero is decoded on click. Chrome and Safari 18.2+; other browsers navigate as before. `video.ts` is inlined by `PlayButton.astro` (no module request): an external module script on the arriving page made about half of Chrome's transitions skip.
+- **Reduced motion and Save-Data.** The scales and the page morph go; colour fades and the poster fade stay, because they carry state, not movement. The loop stays on its poster with Play offered, and fetches nothing until pressed.
+- No entrances, no scroll effects, no preloader, no smooth scrolling, no `will-change`, no keyframes of our own.
 
-### Print and forced colours
-- **Print:** a white ground; fields print as 1px ink outlines with the pinned still (never the video) and the still's own timecode in place of the transport; lead keys print outlined with their URLs; the nav, copy keys and back-to-top link are dropped; heads stay with what follows and no figure, note or row is cut.
-- **Forced colours:** the rail is a border and keeps CanvasText, the tick marks paint CanvasText, the progress fill and held cue Highlight; keys drawn by fills or rings get a transparent outline that the system colours, disabled keys read GrayText, and the titles' resting underline is removed.
+### Print
+White ground, no video or Play control (the poster prints), the rail static, external URLs printed after their links, the footer row at title size, no row, figure or facts row split across pages.
+
+## What this supersedes in the v3 brief
+
+The brief was written before the direction was picked; where B differs, this file wins:
+- **Type:** Funnel Display and Funnel Sans become Schibsted Grotesk and Newsreader; the ramp {56, 24, 20, 17, 14} becomes the roles above, and Meta rises from 14 to 15px. The acceptance test on computed sizes uses this ramp.
+- **Colour:** the rose accent and the cool ground become Signal Orange on Paper; the rose's list of uses becomes the One Orange Rule.
+- **Radii:** {0, 8} becomes 0 only.
+- **Button:** 44px becomes 48px.
+- **Row links:** "aligned to the bottom of the media" becomes the top aligned flow; the acceptance test "same title offset and link baseline in every row" becomes "same title offset in every row".
+- **Theme:** one light theme stays (the brief's call), so there is no dark mode.
+- **Row 1 loop:** "a muted loop with no transport" gets one Play/Pause text control under the media: a loop that starts on its own and runs past 5 seconds needs a pause (WCAG 2.2.2, Level A). It adds one tab stop to the 1440 fold (8, the brief's limit).
+- **One authored moment:** the page morph between a home row and its case hero is a second, small one (200ms, on a click, never under reduced motion). It lives in one commit and reverts cleanly.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep rose to its seven uses, and put every other emphasis in weight, size or an ink field.
-- **Do** show a project's proof next to the sentence it backs, and give that proof an address (a tick id or a region id) with an evidence key in the note.
-- **Do** keep transport cells fixed: a state change swaps text inside a cell and never moves the track or the ticks.
-- **Do** give every pressable both a press scale (0.97, or 0.99 on wide surfaces) and a colour answer while pressed, gate hover fills to fine pointers, and keep focus instant.
-- **Do** size type, spacing and wells on the 8px lattice and the five-step ramp.
-- **Do** keep everything visible at first paint and without JS: no-JS clips fall back to native controls over the pinned still.
+- **Do** put every left edge on a column line and size media by slot (`src/styles/slots.ts`), never by hand.
+- **Do** keep density at 2.0 or more at 1440: a weak source gets a smaller slot or a re-capture, never an upscale.
+- **Do** measure gaps from ink: trim text boxes to cap height and baseline and use the spacing scale.
+- **Do** use the orange only as an underline, ring, mark, button fill or selection.
+- **Do** keep row text one top aligned flow, and keep every row and every case study the same anatomy.
+- **Do** keep everything visible without JavaScript and at first paint.
 
 ### Don't:
-- **Don't** add a second accent colour, gradient text, glow, glass (`backdrop-filter`), drop shadows or film grain.
-- **Don't** animate anything into view on scroll, fade content in on load, add parallax, scroll progress bars, smooth-scroll libraries or any other scroll-jacking.
-- **Don't** use pill shapes (`border-radius: 999px`), marquees, cursor effects, 3D tilt, magnetic buttons or pulsing "live" dots.
-- **Don't** use slogans ("Things I've built.", "Let's build something.", "Selected work") or decorative headings; copy comes verbatim from `src/data/projects.ts`.
-- **Don't** put rose on footage or behind text larger than a key label, and don't use middots as separators: draw a hairline.
-- **Don't** add a third type family or weights beyond Display 600 and Sans 400, 500 and 600.
+- **Don't** add a second accent, gradient text, shadows, glass, cards or rounded corners.
+- **Don't** set anything under 15px, track display type tighter than -0.04em, or turn on tabular figures.
+- **Don't** add eyebrows, section numbers, tag chips, middot strips or slogans ("Selected work", "Let's build something").
+- **Don't** animate anything into view, scroll-jack, add a preloader, or move anything but the row 1 loop on its own.
+- **Don't** pin row links to the media's bottom or let a slot draw media wider than its source allows.
+- **Don't** write em or en dashes anywhere, including comments that might ship; `npm run build` fails on them.

@@ -4,16 +4,21 @@
 //   node scripts/shots.mjs before            -> before-{mobile,tablet,desktop}.png (+ -fold.png, first viewport only)
 //   node scripts/shots.mjs after             -> after-*.png
 //   node scripts/shots.mjs diff before after -> diff-*.png + changed-pixel counts (exit 1 above TOLERANCE)
-//   node scripts/shots.mjs check             -> page checks at every viewport; exit 1 on any FAIL
+//   node scripts/shots.mjs check             -> page checks on every route at every viewport; exit 1 on any FAIL
 //
-// Options: --url <site>  use an already-running server instead of serving dist/ (scripts/serve.mjs)
+// Routes: every index.html under dist/ (home, then /work/<slug>/ ...). Home shots keep the plain <name>-<vp>.png
+// names (so diff works across versions); other routes are <name>-<route-slug>-<vp>.png.
+//
+// Options: --url <site>  use an already-running server instead of serving dist/ (scripts/serve.mjs); home only
+//                        unless --routes is given
+//          --routes -,work/sidequest  limit routes ('-' is home)
 //          --vp mobile,desktop  limit viewports
 // Env:     PORT (default 4321) for the dist/ server; $A11Y_OUT for output (default: autopilot artifacts dir).
 //
 // Uses the installed Google Chrome (channel 'chrome'), so no browser download. Screenshots emulate
 // prefers-reduced-motion and freeze videos on frame 0 so output is stable between runs.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { chromium } from 'playwright';
@@ -39,6 +44,7 @@ const argv = process.argv.slice(2);
 const opt = (name) => { const i = argv.indexOf(`--${name}`); return i >= 0 ? argv.splice(i, 2)[1] : undefined; };
 const url = opt('url');
 const vpList = opt('vp');
+const routeList = opt('routes');
 const VIEWPORTS = Object.fromEntries(Object.entries(ALL_VIEWPORTS).filter(([k]) => !vpList || vpList.split(',').includes(k)));
 const [cmd, ...rest] = argv;
 
@@ -75,6 +81,18 @@ const SITE = url || `http://127.0.0.1:${PORT}/sai-portfolio/`;
 const server = url ? null : await serve(join(root, 'dist'), PORT);
 const stop = () => server?.close();
 
+// '' is home, 'work/sidequest/' a case study; home first, then alphabetical.
+const norm = (r) => (r === '-' || r === '' || r === '/' ? '' : `${r.replace(/^\/+|\/+$/g, '')}/`);
+const findRoutes = (dir, base = '') =>
+  readdirSync(dir).flatMap((f) => {
+    const full = join(dir, f);
+    if (statSync(full).isDirectory()) return f === 'assets' || f === 'media' ? [] : findRoutes(full, `${base}${f}/`);
+    return f === 'index.html' ? [base] : [];
+  });
+const ROUTES = routeList ? routeList.split(',').map(norm) : url ? [''] : findRoutes(join(root, 'dist')).sort((a, b) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)));
+const slug = (r) => (r ? r.replace(/\/$/, '').replace(/\//g, '-') : 'home');
+if (!url && !existsSync(join(root, 'dist', 'index.html'))) { console.error('dist/ is not built; run npm run build'); process.exit(2); }
+
 const browser = await chromium.launch({ channel: 'chrome', args: ['--hide-scrollbars'] });
 let failed = false;
 try {
@@ -87,13 +105,15 @@ try {
 process.exit(failed ? 1 : 0);
 
 async function shots(name) {
-  for (const [vp, device] of Object.entries(VIEWPORTS)) {
-    const { context, page } = await openFrozen(device);
-    const file = join(OUT, `${name}-${vp}.png`);
-    await page.screenshot({ path: join(OUT, `${name}-${vp}-fold.png`) });
+  for (const route of ROUTES) for (const [vp, device] of Object.entries(VIEWPORTS)) {
+    const href = SITE + route;
+    const base = route ? `${name}-${slug(route)}-${vp}` : `${name}-${vp}`;
+    const { context, page } = await openFrozen(device, href);
+    const file = join(OUT, `${base}.png`);
+    await page.screenshot({ path: join(OUT, `${base}-fold.png`) });
     const height = await page.evaluate(() => document.documentElement.scrollHeight);
     if (height * device.deviceScaleFactor > MAX_CAPTURE_PX) {
-      const tall = await openFrozen({ ...device, deviceScaleFactor: 1 });
+      const tall = await openFrozen({ ...device, deviceScaleFactor: 1 }, href);
       await tall.page.screenshot({ path: file, fullPage: true });
       await tall.context.close();
     } else {
@@ -104,10 +124,10 @@ async function shots(name) {
   }
 }
 
-async function openFrozen(device) {
+async function openFrozen(device, href) {
   const context = await browser.newContext({ ...device, reducedMotion: 'reduce' });
   const page = await context.newPage();
-  await page.goto(SITE, { waitUntil: 'networkidle' });
+  await page.goto(href, { waitUntil: 'networkidle' });
   await settle(page);
   await page.evaluate(async () => {
     // Freeze videos on frame 0 (the site's IntersectionObserver would otherwise play them).
@@ -134,12 +154,13 @@ async function settle(page, step = 40) {
 
 async function check() {
   const results = [];
+  let route = '';
   const report = (level, vp, mode, id, detail) => {
-    results.push({ level, vp, mode, id, detail });
-    console.log(`${level.padEnd(4)} ${vp}/${mode} ${id}${detail ? ` — ${detail}` : ''}`);
+    results.push({ level, route: slug(route), vp, mode, id, detail });
+    console.log(`${level.padEnd(4)} ${slug(route)} ${vp}/${mode} ${id}${detail ? ` — ${detail}` : ''}`);
   };
 
-  for (const [vp, device] of Object.entries(VIEWPORTS)) {
+  for (route of ROUTES) for (const [vp, device] of Object.entries(VIEWPORTS)) {
     for (const mode of ['reduce', 'motion', 'nojs']) {
       const context = await browser.newContext({
         ...device,
@@ -158,7 +179,7 @@ async function check() {
             .observe({ type: 'layout-shift', buffered: true });
         });
       }
-      await page.goto(SITE, { waitUntil: 'networkidle' });
+      await page.goto(SITE + route, { waitUntil: 'networkidle' });
       if (mode === 'nojs') await page.waitForTimeout(300);
       else await settle(page, mode === 'motion' ? 150 : 40);
 
@@ -227,9 +248,9 @@ async function check() {
   const fails = results.filter((r) => r.level === 'FAIL').length;
   const warns = results.filter((r) => r.level === 'WARN').length;
   const file = join(OUT, 'check.json');
-  writeFileSync(file, JSON.stringify({ site: SITE, fails, warns, results }, null, 2));
-  console.log(`\n${fails ? 'FAIL' : 'PASS'}: ${fails} fail, ${warns} warn -> ${file}`);
+  writeFileSync(file, JSON.stringify({ site: SITE, routes: ROUTES.map(slug), fails, warns, results }, null, 2));
+  console.log(`\n${fails ? 'FAIL' : 'PASS'}: ${fails} fail, ${warns} warn on ${ROUTES.length} route(s) (${ROUTES.map(slug).join(', ')}) -> ${file}`);
   return fails > 0;
 }
 
-function usage() { console.error('usage: shots.mjs <name> | check | diff <a> <b>  [--url <site>] [--vp mobile,tablet,desktop]'); process.exit(2); }
+function usage() { console.error('usage: shots.mjs <name> | check | diff <a> <b>  [--url <site>] [--routes -,work/<slug>] [--vp mobile,tablet,desktop]'); process.exit(2); }

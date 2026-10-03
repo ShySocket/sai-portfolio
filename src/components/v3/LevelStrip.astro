@@ -1,0 +1,419 @@
+---
+// Sidequest level strip: the authored run on one time axis. Each jump or hop is an arc drawn to its height and air
+// time, each dodge a tick, over a band per surface; a bracket marks the span the hero capture shows.
+// Like the speed chart: geometry in a nested <svg> stretched to the width (x in tenths of a second, y in px, strokes
+// non-scaling), every label in the outer <svg> at percent x and px y, so text stays 15px at every width.
+// From 640 the surfaces are labelled in place: a label that does not fit its band drops to a lower row with a leader,
+// laid out at build time for 576 px of 15px labels (38.4em: the narrowest Wide figure from 640), so wider never
+// collides. Under 640 seven labels cannot share 288 to 607 px, so a swatch key under the chart names the five
+// surfaces instead; a chart under 38.4em of its own label size (a larger default font) takes the key too. Label rows
+// sit in em under the bands, so they move apart as the text grows.
+import type { LevelStrip } from '../../data/case-studies';
+
+interface Props {
+  strip: LevelStrip;
+  id: string;
+}
+const { strip, id } = Astro.props;
+
+const X = Math.round(strip.seconds * 100) / 10;
+const ux = (t: number) => Math.round(t * 100) / 10;
+const pct = (t: number) => `${((t / strip.seconds) * 100).toFixed(3)}%`;
+
+const K = 110; // px of arc per frame height
+const BRACKET = 26.5;
+const BASE = 128.5;
+const BAND = BASE + 13.5;
+const BAND_H = 10;
+const LABEL0 = BAND + BAND_H + 20;
+const ROW = 18;
+const INNER = BAND + BAND_H + 2;
+
+// Inside the capture: drawn in ink, the rest in grey.
+const inCapture = (t: number) => t >= strip.highlight.from && t <= strip.highlight.to;
+const arcs = strip.events.filter((e) => e.type !== 'dodge');
+const dodges = strip.events.filter((e) => e.type === 'dodge');
+const hidden = strip.hidden[0];
+
+const shade: Record<string, string> = { rail: 'b2', floor: 'b4', sidewalk: 'b3', hedge: 'b1', grass: 'b5' };
+
+// Label rows for one layout width. A label sits in row 0 under its band when it fits inside the band; otherwise it
+// drops to a lower row with a leader, a vertical line from the band down to the label, placed as near the band's
+// centre as it can be with the label to its left or right. A placement keeps the label inside the chart and clear of every label
+// in its row, its leader clear of every label in the rows it passes through, and the label clear of every earlier
+// leader through its row. Labels prefer the left of their leader, the side already laid out. Rows are bounded, so
+// an impossible layout fails the build instead of looping.
+const CH = 8; // px per character of 15px Schibsted Grotesk 500, rounded up
+const PAD = 6;
+const MAX_ROWS = 4;
+type Placed = { row: number; x: string; anchor: 'start' | 'end' };
+function layout(width: number): Placed[] {
+  const labels: { row: number; a: number; b: number }[] = [];
+  const leaders: { x: number; row: number }[] = [];
+  const free = (row: number, a: number, b: number, lead: number | null) =>
+    a >= 0 &&
+    b <= width &&
+    labels.every((l) => l.row !== row || a > l.b + PAD || b < l.a - PAD) &&
+    (lead === null || labels.every((l) => l.row >= row || lead < l.a - 3 || lead > l.b + 3)) &&
+    leaders.every((l) => l.row <= row || l.x < a - 3 || l.x > b + 3);
+  const at = (x: number) => `${((x / width) * 100).toFixed(3)}%`;
+  return strip.surfaces.map((s) => {
+    const x0 = (s.from / strip.seconds) * width;
+    const x1 = (s.to / strip.seconds) * width;
+    const w = s.name.text.length * CH;
+    if (w <= x1 - x0 - PAD && free(0, x0, x0 + w, null)) {
+      labels.push({ row: 0, a: x0, b: x0 + w });
+      return { row: 0, x: pct(s.from), anchor: 'start' };
+    }
+    // Leaders start at the band's centre and move outward, so two narrow neighbours never get leaders side by side
+    // at their shared edge (which read as one stray double rule).
+    const mid = Math.round((x0 + x1) / 2);
+    const leads: number[] = [];
+    for (let d = 0; mid - d > x0 || mid + d < x1 - 1; d += 2) {
+      if (mid - d > x0) leads.push(mid - d);
+      if (d > 0 && mid + d < x1 - 1) leads.push(mid + d);
+    }
+    for (let row = 1; row <= MAX_ROWS; row++) {
+      for (const lead of leads) {
+        if (free(row, lead - 5 - w, lead - 5, lead)) {
+          labels.push({ row, a: lead - 5 - w, b: lead - 5 });
+          leaders.push({ x: lead, row });
+          return { row, x: at(lead), anchor: 'end' };
+        }
+        if (free(row, lead + 5, lead + 5 + w, lead)) {
+          labels.push({ row, a: lead + 5, b: lead + 5 + w });
+          leaders.push({ x: lead, row });
+          return { row, x: at(lead), anchor: 'start' };
+        }
+      }
+    }
+    throw new Error("LevelStrip: no room for the label " + s.name.text + " at " + width + " px");
+  });
+}
+const placed = layout(576);
+// Under the bands, label offsets are in em of the 15px label (the layout above is in px at 15px), so a larger default
+// font spreads the rows instead of stacking larger text on them; the bands themselves stay in px.
+const UNDER = BAND + BAND_H;
+const em = (px: number) => `${Math.round((px / 15) * 10000) / 10000}em`;
+const rows = Math.max(...placed.map((r) => r.row));
+const hw = LABEL0 + ROW * rows + 8;
+const hwCss = `calc(${UNDER}px + ${em(hw - UNDER)})`;
+const hn = INNER + 2;
+// The swatch key under 640: each surface once, in the order the run meets it.
+const kinds = [...new Map(strip.surfaces.map((s) => [s.name.text, s.name])).values()];
+const titleId = `${id}-chart`;
+const arcPath = (t: number, air: number, h: number) => {
+  const x0 = ux(t);
+  const x1 = ux(t + air);
+  return `M${x0} ${BASE}Q${Math.round(((x0 + x1) / 2) * 10) / 10} ${BASE - 2 * h * K} ${x1} ${BASE}`;
+};
+const named = arcs.filter((e) => e.name);
+const anchor = (name: string) => (name === 'Car' ? 'end' : name === 'Chain' ? 'start' : 'middle');
+const nudge = (name: string) => (name === 'Car' ? -3 : name === 'Chain' ? 3 : 0);
+---
+
+<div class="strip-chart">
+  <ul class="legend" aria-hidden="true">
+    <li>
+      <svg viewBox="0 0 24 12" width="24" height="12"><path class="key key--jump" d="M1 11.5Q12 -9 23 11.5"></path></svg>
+      <span data-verbatim={strip.legend.jump.from}>{strip.legend.jump.text}</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 12" width="24" height="12"><path class="key key--hop" d="M1 11.5Q12 2 23 11.5"></path></svg>
+      <span data-verbatim={strip.legend.hop.from}>{strip.legend.hop.text}</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 12" width="24" height="12"><line class="key key--dodge" x1="12" x2="12" y1="0" y2="12"></line></svg>
+      <span data-verbatim={strip.legend.dodge.from}>{strip.legend.dodge.text}</span>
+    </li>
+    <li>
+      <svg viewBox="0 0 24 12" width="24" height="12"><line class="key key--hidden" x1="1" x2="23" y1="6.5" y2="6.5"></line></svg>
+      <span data-verbatim={hidden.label.from}>{hidden.label.text}</span>
+    </li>
+  </ul>
+  <svg class="chart strip-svg" width="100%" height={hw} style={`--hw: ${hwCss}; --hn: ${hn}px`} role="img" aria-labelledby={titleId}>
+    <title id={titleId} data-verbatim={strip.title.from}>{strip.title.text}</title>
+    <svg x="0" y="0" width="100%" height={INNER} viewBox={`0 0 ${X} ${INNER}`} preserveAspectRatio="none" aria-hidden="true">
+      <path class="bracket" d={`M${ux(strip.highlight.from)} ${BRACKET + 6}V${BRACKET}H${ux(strip.highlight.to)}V${BRACKET + 6}`}></path>
+      <line class="base" x1="0" x2={ux(hidden.from)} y1={BASE} y2={BASE}></line>
+      <line class="base base--hidden" x1={ux(hidden.from)} x2={ux(hidden.to)} y1={BASE} y2={BASE}></line>
+      <line class="base" x1={ux(hidden.to)} x2={X} y1={BASE} y2={BASE}></line>
+      {
+        strip.surfaces.map((s) => (
+          <rect class={`band ${shade[s.name.text] ?? 'b3'}`} x={ux(s.from)} y={BAND} width={ux(s.to) - ux(s.from)} height={BAND_H} />
+        ))
+      }
+      {
+        arcs.map((e) => (
+          <path
+            class:list={['arc', e.type === 'hop' && 'arc--hop', inCapture(e.t) && 'arc--key']}
+            d={arcPath(e.t, e.air ?? 0.5, e.height ?? 0.1)}
+          />
+        ))
+      }
+      {dodges.map((e) => <line class:list={['dodge', inCapture(e.t) && 'dodge--key']} x1={ux(e.t)} x2={ux(e.t)} y1={BASE - 9} y2={BASE + 5} />)}
+    </svg>
+    <text class="label label--key" x={pct((strip.highlight.from + strip.highlight.to) / 2)} y={BRACKET - 9} text-anchor="middle" data-verbatim={strip.highlight.label.from}>{strip.highlight.label.text}</text>
+    {
+      named.map((e) => (
+        <text
+          class:list={['label', inCapture(e.t) && 'label--key']}
+          x={pct(e.t + (e.air ?? 0) / 2)}
+          dx={nudge(e.name!.text)}
+          y={BASE - (e.height ?? 0) * K - 8}
+          text-anchor={anchor(e.name!.text)}
+          data-verbatim={e.name!.from}
+        >
+          {e.name!.text}
+        </text>
+      ))
+    }
+    <g class="wide">
+      {
+        strip.surfaces.map((s, i) => {
+          const r = placed[i];
+          const below = LABEL0 - UNDER + ROW * r.row; // baseline under the bands, px at 15px
+          // The leader runs from 2px under the band to 12px (at 15px) above the label's baseline.
+          const lead = below - 12 - 2;
+          return (
+            <Fragment>
+              {r.row > 0 && <rect class="lead" x={r.x} y={UNDER + 2} width="1" height={lead} style={`height: calc(${em(below - 12)} - 2px)`} />}
+              <text x={r.x} dx={r.row > 0 ? (r.anchor === 'end' ? -5 : 5) : 0} y={UNDER} dy={em(below)} text-anchor={r.anchor} data-verbatim={s.name.from}>
+                {s.name.text}
+              </text>
+            </Fragment>
+          );
+        })
+      }
+    </g>
+  </svg>
+  <ul class="legend surfaces" aria-hidden="true">
+    {
+      kinds.map((k) => (
+        <li>
+          <svg viewBox="0 0 16 10" width="16" height="10"><rect class={`swatch ${shade[k.text] ?? 'b3'}`} width="16" height="10" /></svg>
+          <span data-verbatim={k.from}>{k.text}</span>
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<style>
+  /* The chart is its own size container, in em of its 15px labels, so the in-place labels need 38.4em of width. */
+  .strip-chart {
+    container-type: inline-size;
+    display: grid;
+    gap: var(--s-4);
+    font-size: var(--fs-meta);
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-5);
+    font-family: var(--face-display);
+    font-size: var(--fs-meta);
+    line-height: var(--lh-meta);
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+  }
+
+  /* The data writes the hidden span in lower case for its use inside the chart; a legend entry starts upper case. */
+  .legend span {
+    display: inline-block;
+  }
+
+  .legend span::first-letter {
+    text-transform: uppercase;
+  }
+
+  .legend svg {
+    flex: none;
+    overflow: visible;
+  }
+
+  .key {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1.5;
+  }
+
+  .key--hop {
+    stroke: var(--chart-2);
+    stroke-dasharray: 2 2;
+  }
+
+  .key--hidden {
+    stroke: var(--chart-2);
+    stroke-dasharray: 3 3;
+  }
+
+  .strip-svg {
+    height: var(--hw);
+  }
+
+  .strip-svg text {
+    font-size: var(--fs-meta);
+  }
+
+  .base,
+  .arc,
+  .dodge,
+  .bracket,
+  .band,
+  .lead {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .base {
+    stroke: var(--ink);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+
+  .base--hidden {
+    stroke: var(--chart-2);
+    stroke-dasharray: 3 3;
+  }
+
+  .arc {
+    fill: none;
+    stroke: var(--chart-2);
+    stroke-width: 1.25;
+  }
+
+  .arc--hop {
+    stroke-dasharray: 2 2;
+  }
+
+  .arc--key {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .dodge {
+    stroke: var(--chart-2);
+    stroke-width: 1.5;
+  }
+
+  .dodge--key {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .bracket {
+    fill: none;
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  .band {
+    stroke: var(--paper);
+    stroke-width: 2;
+  }
+
+  .b1 {
+    fill: var(--chart-1);
+  }
+
+  .b2 {
+    fill: var(--chart-2);
+  }
+
+  .b3 {
+    fill: var(--chart-3);
+  }
+
+  .b4 {
+    fill: var(--chart-4);
+  }
+
+  .b5 {
+    fill: var(--chart-5);
+  }
+
+  .lead {
+    fill: var(--ink-2);
+    shape-rendering: crispEdges;
+  }
+
+  .label--key {
+    fill: var(--ink);
+    font-weight: 600;
+  }
+
+  .surfaces {
+    display: none;
+  }
+
+  @media (max-width: 639px) {
+    .strip-svg {
+      height: var(--hn);
+    }
+
+    .wide {
+      display: none;
+    }
+
+    .surfaces {
+      display: flex;
+    }
+  }
+
+  @container (width < 38.4em) {
+    .strip-svg {
+      height: var(--hn);
+    }
+
+    .wide {
+      display: none;
+    }
+
+    .surfaces {
+      display: flex;
+    }
+  }
+
+  /* Contrast themes repaint the page but keep SVG paint, so the ink parts (the capture's arcs, its bracket and the
+     labels) vanished on a dark Canvas. Ink takes the theme's text colour, the greys its grey, the band gaps Canvas. */
+  @media (forced-colors: active) {
+    .arc,
+    .dodge {
+      stroke: GrayText;
+    }
+
+    .key,
+    .base,
+    .bracket,
+    .arc--key,
+    .dodge--key {
+      stroke: CanvasText;
+    }
+
+    /* After .key and .base, which these also carry. */
+    .key--hop,
+    .key--hidden,
+    .base--hidden {
+      stroke: GrayText;
+    }
+
+    .band {
+      stroke: Canvas;
+    }
+
+    .lead {
+      fill: CanvasText;
+    }
+
+    .strip-svg text {
+      fill: CanvasText;
+    }
+  }
+</style>

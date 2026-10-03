@@ -1,0 +1,47 @@
+---
+// One image as a <picture>: AVIF then WebP sets from src/lib/picture.ts, real `sizes`, width and height from the
+// widest encode (so the box is reserved before it loads), lazy unless it is the page's hero.
+// A still within 2% of the frame's 16:9 fills it (object-fit: cover, which trims at most 1% from each edge)
+// instead of leaving hairline letterbox bars of panel colour beside a white screenshot.
+import type { ImageMetadata } from 'astro';
+import type { Copy, Px } from '../../data/case-studies';
+import { pictureSources } from '../../lib/picture';
+import { tie } from '../../lib/text';
+
+interface Props {
+  image: ImageMetadata;
+  px: Px;
+  widths: number[];
+  sizes: string;
+  /** The description, or null for decorative media (home rows, where the title beside it names the project). */
+  alt: Copy | null;
+  priority?: boolean;
+  /** Fill a 16:9 frame when the source is within 2% of 16:9. */
+  fill?: boolean;
+}
+const { image, px, widths, sizes, alt, priority = false, fill = false } = Astro.props;
+const s = await pictureSources(image, px, widths, sizes);
+const cover = fill && Math.abs(px[0] / px[1] / (16 / 9) - 1) < 0.02;
+---
+
+<picture>
+  <source type="image/avif" srcset={s.avif} sizes={s.sizes} />
+  <source type="image/webp" srcset={s.webp} sizes={s.sizes} />
+  <img
+    class:list={[cover && 'cover']}
+    src={s.src}
+    width={s.width}
+    height={s.height}
+    alt={alt ? tie(alt.text) : ''}
+    data-verbatim={alt?.from}
+    loading={priority ? 'eager' : 'lazy'}
+    decoding="async"
+    fetchpriority={priority ? 'high' : undefined}
+  />
+</picture>
+
+<style>
+  img.cover {
+    object-fit: cover;
+  }
+</style>

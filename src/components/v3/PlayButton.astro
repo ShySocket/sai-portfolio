@@ -1,0 +1,33 @@
+---
+// The Play/Pause control for one video (global.css .play): the case hero's caption and the home row 1 loop. video.ts
+// finds it by data-toggle (the video's id) and sets data-state; CSS shows the matching glyph and label. Both labels
+// sit in one grid cell, so the button keeps the width of the wider one and the caption never shifts when it toggles.
+// Shown only under the head's js class: without JS the hero keeps its native controls and the loop its poster.
+//
+// The script lives here so it ships only to pages with a video, and since nothing else imports it, Astro inlines it
+// (it is under build.assetsInlineLimit): no request, and no module fetch for Chrome to wait on while it reveals the
+// page view transition (an external module script there made about half the transitions skip in testing).
+import { labels } from '../../data/case-studies';
+import Icon from './Icon.astro';
+
+interface Props {
+  /** The id of the <video> this button drives. */
+  video: string;
+  /** The id of the text that names the video: the hero caption, or the home row title. */
+  describedby: string;
+}
+const { video, describedby } = Astro.props;
+---
+
+<button class="play" type="button" data-toggle={video} data-state="paused" aria-describedby={describedby}>
+  <Icon name="play" class="play__icon play__icon--play" />
+  <Icon name="pause" class="play__icon play__icon--pause" />
+  <span class="play__label">
+    <span class="play__lbl play__lbl--play" data-verbatim={labels.play.from}>{labels.play.text}</span>
+    <span class="play__lbl play__lbl--pause" data-verbatim={labels.pause.from}>{labels.pause.text}</span>
+  </span>
+</button>
+
+<script>
+  import '../../scripts/video.ts';
+</script>

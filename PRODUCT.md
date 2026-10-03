@@ -10,7 +10,7 @@ web
 New-grad software engineering recruiters and hiring engineers. They open the link from a résumé, application or LinkedIn message, usually on a laptop and sometimes on a phone, and decide in about five seconds whether to keep looking. Their job: tell who Sai is, what Sai built, and whether the engineering is real, then find a way to follow up.
 
 ## Product Purpose
-A single-page portfolio for Sai Bhandar (Business + CS at Carnegie Mellon). It exists to turn a recruiter's glance into an interview by showing shipped, playable, technically specific projects. Success means a recruiter can name at least one project and one technical claim after a short scroll, and can reach Sai by email or a project link without hunting.
+A portfolio for Sai Bhandar (Business + CS at Carnegie Mellon): a home page plus one structured case-study page per project (v3, decided 2026-10-01). It exists to turn a recruiter's glance into an interview by showing shipped, playable, technically specific projects, and the site itself must read as evidence of Sai's design and engineering craft. Success means a recruiter can name at least one project and one technical claim within seconds, can open a case study that explains the role, problem, approach and outcome, and can reach Sai by email, LinkedIn, GitHub or résumé without hunting.
 
 ## Positioning
 Every project is something you can play or watch: a runner driven by real dashcam footage and vehicle motion, laser tag played with phone cameras and on-device vision, a hackathon-winning disaster-relief tool, procedural VR, and gyro-controlled multiplayer. The claims are concrete engineering (SAM 2 segmentation, ArcFace identity fusion, GPS + IMU dead reckoning, TCP sockets), not adjectives.
@@ -21,14 +21,14 @@ Every project is something you can play or watch: a runner driven by real dashca
 - Several projects have live demos: Sidequest (video-runner.vercel.app) and Lazer Shooter (lazer-shooter-game.vercel.app, a phone-first PWA, so desktop visitors get a QR code).
 
 ## Capabilities and Constraints
-- **Content scope is projects only.** Sai declined an about/bio, an experience timeline, a résumé/LinkedIn section and a skills section. Do not add them.
+- **Content scope (changed 2026-10-01, Sai's decision):** home page + one case-study page per project at `/work/<slug>`, plus a short About (2-3 sentences: CMU Business + CS, what Sai builds, what he is looking for) and links to his résumé PDF, LinkedIn (https://www.linkedin.com/in/sai-bhandar) and GitHub (https://github.com/ShySocket). Still no experience timeline or skills grid. The public résumé PDF is built from a temp copy of `~/Documents/Resume/swe-latex` with the phone line removed (master never edited) unless Sai says otherwise.
 - **Headline is fixed:** `Sai Bhandar` / `Business + CS @ CMU`.
 - **Project order is fixed:** Sidequest, Lazer Shooter, ReliefIQ, Sunrise, GyroBlaster. VR Rage Room and Posematic are dropped.
-- **Project copy is confirmed.** Titles, summaries, notes, stacks, awards and links live in `src/data/projects.ts`. Ask before changing any factual copy.
+- **Project copy is confirmed.** Titles, summaries, notes, stacks, awards and links live in `src/data/projects.ts`. Ask before changing any factual copy. Case-study sections may only restate facts from projects.ts or the public project repos (ShySocket/sidequest, ShySocket/LazerShooterGame); every new sentence goes on an approval list for Sai before it ships.
 - **Derived copy approved by Sai on 2026-10-01:** the Cue cue captions, the evidence-key labels ("Show m:ss.s in clip", "Show match scores", "Show cue track"), the provenance line ("12 s loop of the 25 s capture", "Full capture, 3.7 MB"), the closing copy-key labels, and the meta/OG title and description. New derived strings still need his approval.
 - **Performance:** no preloader, no 3D hero, nothing that delays content. No scroll-jacking or smooth-scroll libraries. Motion uses transform and opacity only, respects `prefers-reduced-motion`, and every piece of content is visible without JavaScript.
 - **Media is self-hosted and compressed,** with poster frames and lazy loading. No new YouTube embeds.
-- **Open decisions:** the visual world (palette, type, layout) is being redesigned on 2026-09-30 and is recorded in DESIGN.md once chosen.
+- **Open decisions (v3, 2026-10-01):** the live Cue design reads as "all over the place" with a blurry hero video (Sai). v3 replaces the layout with one strict grid and type system across home and case studies; Sai picks the direction in Figma before anything is built and OKs the result before it deploys. Every image and video is shown at or below native resolution / 2 at 1440 (no upscaled media).
 
 ## Brand Commitments
 - Name: Sai Bhandar. Contact: saib@andrew.cmu.edu; Carnegie Mellon University, Pittsburgh, PA.
@@ -36,19 +36,21 @@ Every project is something you can play or watch: a runner driven by real dashca
 - One accent colour.
 
 ## Evidence on Hand
-- Video in `public/media/`, re-derived from the sources by `node scripts/media.mjs`:
-  - `sidequest-loop.mp4` (0.9 MB, 960x540, 12.0 s): the first 12 s of the Sidequest capture; the only clip that may play on its own (muted, in the first viewport, never under reduced motion or Save-Data).
-  - `sidequest.mp4` (3.7 MB, 960x540, 25.0 s): the full gameplay-only capture recorded from the WebGL build, restored and linked under the stage as "Full capture, 3.7 MB"; never autoplayed or preloaded.
-  - `sunrise-scene.mp4` (0.8 MB, 600x338, 29.4 s): the Unity editor capture cropped to its Scene view. It replaces the full editor capture `sunrise.mp4` (1.1 MB, 1280x720), which is no longer served; the original is kept in git at tag `light-minimal` and as the source `media-src/sunrise.mp4`.
-  - `gyroblaster.mp4` (0.9 MB, 1280x720, 9.4 s), unchanged.
-- Sources (not served): `media-src/sidequest.mp4` and `media-src/sunrise.mp4`.
-- Pinned stills in `src/assets/stills/`, build inputs stored as q95 WebP that astro:assets ships as AVIF and WebP: `sidequest-4.5.webp` (1024x576), `sunrise-13.7.webp` (600x338, frame 411, the only stretch of the capture with nothing selected, so no transform gizmo; the editor's small mouse cursor is on the facade in all of those frames, and no frame of the capture is free of editor overlay; Sai accepted this Sunrise footage as is on 2026-10-01, so do not re-raise it) and `gyroblaster-4.6.webp` (960x540). They are the posters and the no-JS, print, reduced-motion and Save-Data frames, and replace the `public/media/*-N.webp` stills and the earlier `*-poster` images.
-- Thumbnails `thumb-*.webp` for the project index, in `public/media/`.
-- ReliefIQ detail crops in `src/assets/crops/` (PNG build inputs; only their WebP encodes ship).
-- Images in `src/assets/`: `relief-1..3.jpg` (ReliefIQ screens) and `lazer-home.png` (Lazer Shooter home screen); `public/media/lazer-qr.svg`.
+- Video in `public/media/v3/`, re-derived by `node scripts/media-v3.mjs`. Every clip is muted (no audio track), AV1 with an H.264 fallback, and drawn at no more than native / 2 at 1440:
+  - `sidequest-home.*` (8.4 s, 1280x720; AV1 1.4 MB, H.264 2.4 MB): home row 1, the only clip that plays on its own (a muted loop that starts after load, with a Pause control; never under reduced motion or Save-Data, nor without JS).
+  - `sidequest-hero.*` (1920x1080): the Sidequest case hero, a capture of the Unity WebGL build over the real footage. Its length, size and budget decision are in the media table.
+  - `sunrise-scene.*` (29.4 s, 1110x624, the Scene view cropped from the editor capture; AV1 and H.264 2.5 MB each): the Sunrise case hero, at Figure width (the documented exception).
+  - `gyroblaster-play.*` (5.7 s, 1920x1080, the projected game only; AV1 0.8 MB, H.264 1.4 MB): the GyroBlaster case hero.
+  - The case heroes load nothing until Play, play on click and pause off screen; without JS they keep native controls.
+- Posters, stills and screens in `src/assets/v3/<project>/`, build inputs that astro:assets ships only as AVIF and WebP: the Sidequest posters `run-*.webp` (frame 0 of each capture cut, 1920x1080); Lazer Shooter `home.png` and `practice.png` (the live PWA at 393x852 CSS, DPR 3); ReliefIQ `relief-1.jpg` and `relief-2.jpg` (2048 px screens) and the home-row crop `map-top5.png`; Sunrise `scene-13.7.webp` (frame 411: nothing selected and only the editor's small cursor on the facade; Sai accepted this Sunrise footage as is on 2026-10-01, so do not re-raise it) and `scene-19.0.webp`; GyroBlaster `play-4.6.webp` and the home-row crop `play-4.6-screen.webp`.
+- `public/media/v3/lazer-qr.svg` (the Lazer Shooter QR), `public/Sai_Bhandar_Resume.pdf` (`scripts/resume.mjs`), and `public/og.jpg` with the favicon and touch icon (`scripts/og.mjs`).
+- Sources, not served and outside the repo, in `~/Documents/autopilot/artifacts/sai-portfolio-v3/media/`: `sidequest/master/` (the lossless Sidequest capture masters; the capture harness is beside them) and `source/` (`sunrise-1080.mp4` and `gyroblaster-1080.mp4`, stream copies of `~/Documents/sai-portfolio/images/FloorsDemo.mp4` and `Gyrogameplay.mp4`). The ReliefIQ screens come from `~/Documents/sai-portfolio/images/Relief1..3.jpg`.
+- Held until Sai answers (inventory questions): the full Sunrise editor cut `public/media/v3/sunrise-editor.*` and its posters `src/assets/v3/sunrise/editor-*.webp` (Q9; the clip deploys but nothing links it); the GyroBlaster players still, kept outside the repo in `media/held/gyroblaster/` (both players' consent, Q10); ReliefIQ `relief-3.jpg` and `analyzer.png` (an iStock photo and raw markdown, Q11).
+- Every media file with its native size, slot and density: `~/Documents/autopilot/artifacts/sai-portfolio-v3/media/media-table.md`.
+- The Cue site's media (the 960x540 Sidequest loop, thumbnails, stills and crops) is retired; it stays in git at `main` (893e405) and tag `light-minimal`.
 - Award: ReliefIQ won 1st place at the CMU NOVA Hackathon.
-- Absent: no testimonials, metrics, employer logos, headshot or résumé PDF. Do not fabricate any of them.
-- Lazer Shooter photos are still to come from Sai and will be dropped into `src/assets/lazer/`.
+- Absent: no testimonials, metrics, employer logos or headshot. Do not fabricate any of them. The résumé exists as LaTeX at `~/Documents/Resume/swe-latex` (its header has a phone number; see Capabilities).
+- Lazer Shooter photos are still to come from Sai and go to `~/Documents/autopilot/artifacts/sai-portfolio-v3/media/lazer-from-sai/`.
 
 ## Product Principles
 1. **Proof over claims.** Show the running thing (video, screenshot, live link) next to the sentence that explains it.

@@ -1,0 +1,77 @@
+---
+// One home row, the same anatomy for all five: the frame (Figure slot, a link to the case study kept out of the tab
+// order, since the title links there too), then one top aligned text flow: title, claim, techniques, award, links.
+// Lazer Shooter is phone first, so its Play link has two targets: the live game on touch screens, and the case
+// study's QR code on desktops with a fine pointer. CSS shows exactly one, without JS.
+//
+// li.work__item carries the hairline and the padding; div.work__body holds the row itself, so a press on the media,
+// the title or "Case study" scales the row without scaling its hairline (global.css, Motion). Row 1's loop moves on
+// its own, so it gets a Pause/Play control under the media (WCAG 2.2.2), shown only when JS can drive it.
+import type { CaseStudy } from '../../data/case-studies';
+import { labels } from '../../data/case-studies';
+import { caseUrl, href, tie } from '../../lib/text';
+import Award from './Award.astro';
+import Frame from './Frame.astro';
+import PlayButton from './PlayButton.astro';
+
+interface Props {
+  cs: CaseStudy;
+  priority?: boolean;
+}
+const { cs, priority = false } = Astro.props;
+const to = caseUrl(cs.slug);
+const titleId = `${cs.slug}-title`;
+const loop = cs.home.media.kind === 'video' && cs.home.media.loop;
+const videoId = loop ? `${cs.slug}-loop` : undefined;
+---
+
+<li class="work__item" id={cs.slug}>
+  <div class="work__body grid">
+    <Frame media={cs.home.media} page="home" slot="figure" href={to} class="work__media" priority={priority} decorative videoId={videoId} vt={cs.slug} />
+    {loop && <p class="work__caption"><PlayButton video={videoId!} describedby={titleId} /></p>}
+    <div class="work__text">
+      <h2 class="work__title" id={titleId}><a href={to} data-verbatim={cs.title.from}>{cs.title.text}</a></h2>
+      <p class="work__claim" data-verbatim={cs.claim.from}>{tie(cs.claim.text)}</p>
+      {/* One line, no whitespace between the parts: the commas sit right after each technique. */}
+      <p class="work__meta">{cs.home.meta.map((m, i) => <Fragment>{i > 0 && ', '}<span data-verbatim={m.from}>{tie(m.text)}</span></Fragment>)}</p>
+      {cs.award && <Award award={cs.award} />}
+      <p class="links work__links">
+        <a class="work__case" href={to} aria-describedby={titleId} data-verbatim={labels.caseStudy.from}>{labels.caseStudy.text}</a>
+        {
+          cs.home.links.map((l) =>
+            cs.facts.qr && l.kind === 'play' ? (
+              <Fragment>
+                <a class="touch" href={href(l.href)} aria-describedby={titleId} data-verbatim={l.label.from}>
+                  {l.label.text}
+                </a>
+                <a class="desk" href={`${to}#play`} aria-describedby={titleId} data-verbatim={l.label.from}>
+                  {l.label.text}
+                </a>
+              </Fragment>
+            ) : (
+              <a href={href(l.href)} aria-describedby={titleId} data-verbatim={l.label.from}>
+                {l.label.text}
+              </a>
+            ),
+          )
+        }
+      </p>
+    </div>
+  </div>
+</li>
+
+<style>
+  .desk {
+    display: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .desk {
+      display: inline;
+    }
+
+    .touch {
+      display: none;
+    }
+  }
+</style>

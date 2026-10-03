@@ -1,0 +1,120 @@
+---
+// A chain of steps read top to bottom: an ordered list with a square ink marker per step, a drawn connector with an
+// arrowhead between steps, and an optional connector label (Meta, Ink 2) beside it. Real text at UI size, so it
+// reads, wraps and zooms like the prose next to it; the list order is the reading order for assistive tech.
+import type { Diagram } from '../../data/case-studies';
+import { tie } from '../../lib/text';
+
+interface Props {
+  diagram: Diagram;
+}
+const { diagram } = Astro.props;
+---
+
+<ol class="flow">
+  {
+    diagram.nodes.map((node) => (
+      <li class:list={['flow__node', node.edge && 'flow__node--edge']}>
+        <span class="flow__text" data-verbatim={node.text.from}>
+          {tie(node.text.text)}
+        </span>
+        {node.edge && (
+          <span class="flow__edge" data-verbatim={node.edge.from}>
+            {tie(node.edge.text)}
+          </span>
+        )}
+      </li>
+    ))
+  }
+</ol>
+
+<style>
+  .flow {
+    --marker: 10px;
+    --step: var(--s-6);
+    max-width: var(--measure);
+    font-family: var(--face-display);
+    font-size: var(--fs-ui);
+    line-height: var(--lh-ui);
+    font-weight: 500;
+  }
+
+  .flow__node {
+    position: relative;
+    padding-inline-start: var(--s-6);
+    padding-bottom: var(--step);
+  }
+
+  .flow__node:last-child {
+    padding-bottom: 0;
+  }
+
+  /* The marker sits on the first line's x-height centre. */
+  .flow__node::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: calc(0.75em - var(--marker) / 2);
+    width: var(--marker);
+    height: var(--marker);
+    background: var(--ink);
+  }
+
+  /* The connector: from under the marker to just above the next one, ending in a chevron. */
+  .flow__node:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: calc(var(--marker) / 2 - 0.5px);
+    top: calc(0.75em + var(--marker) / 2 + 6px);
+    bottom: -3px; /* to the chevron's tip on the next step */
+    width: 1px;
+    background: var(--ink);
+  }
+
+  .flow__text {
+    display: block;
+    text-wrap: pretty;
+  }
+
+  /* Some steps are phrases lifted from a sentence ("phone’s gyroscope"): each step starts upper case. */
+  .flow__text::first-letter {
+    text-transform: uppercase;
+  }
+
+  .flow__node--edge {
+    padding-bottom: calc(var(--step) + var(--s-6));
+  }
+
+  /* The connector label, set in the gap below its step, beside the line. */
+  .flow__edge {
+    position: absolute;
+    left: var(--s-6);
+    bottom: calc((var(--step) + var(--s-6) - 22px) / 2); /* centred in its gap */
+    font-size: var(--fs-meta);
+    line-height: var(--lh-meta);
+    color: var(--ink-2);
+  }
+
+  /* Arrowheads: a chevron drawn on the next step, just above its marker. */
+  .flow__node + .flow__node > .flow__text::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--marker) / 2 - 3px);
+    top: calc(0.75em - var(--marker) / 2 - 11px);
+    width: 6px;
+    height: 6px;
+    border-right: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+    transform: rotate(45deg);
+  }
+
+  /* Contrast themes reset a background to Canvas, which erased the markers and connectors (drawn as backgrounds)
+     and left the chevrons loose: they keep the theme's text colour instead. */
+  @media (forced-colors: active) {
+    .flow__node::before,
+    .flow__node:not(:last-child)::after {
+      forced-color-adjust: none;
+      background: CanvasText;
+    }
+  }
+</style>

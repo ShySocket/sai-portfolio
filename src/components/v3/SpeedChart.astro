@@ -1,0 +1,156 @@
+---
+// Sidequest speed chart: two optical-flow curves on one time axis.
+// The data is drawn in a nested <svg> whose viewBox stretches to the figure (preserveAspectRatio none) with
+// non-scaling strokes; every label lives in the outer <svg>, which has no viewBox, so text stays at the 15px Meta
+// size at every width (x in percent of the width, y in px). Under 640 the series take their short names.
+import type { SpeedChart } from '../../data/case-studies';
+import { tie } from '../../lib/text';
+
+interface Props {
+  chart: SpeedChart;
+  id: string;
+}
+const { chart, id } = Astro.props;
+
+const TOP = 8.5; // half-pixel offsets put every gridline on the pixel grid
+const PLOT = 220; // 500 px/s is 50px
+const BOTTOM = TOP + PLOT;
+const H = BOTTOM + 28;
+const X = Math.round(chart.seconds * 10 * 10) / 10; // viewBox units: tenths of a second
+const pct = (t: number) => `${((t / chart.seconds) * 100).toFixed(3)}%`;
+const py = (v: number) => TOP + (1 - v / chart.yMax) * PLOT;
+const n = (v: number) => v.toLocaleString('en-US');
+
+const pairs = (pts: readonly number[]) => Array.from({ length: pts.length / 2 }, (_, i) => [pts[2 * i], pts[2 * i + 1]] as const);
+const path = (pts: readonly number[]) =>
+  'M' + pairs(pts).map(([t, v]) => `${Math.round(t * 100) / 10} ${Math.round(chart.yMax - v)}`).join('L');
+const at = (pts: readonly number[], t: number) => pairs(pts).reduce((a, b) => (Math.abs(b[0] - t) < Math.abs(a[0] - t) ? b : a))[1];
+
+const raw = chart.series.find((s) => s.id === 'raw')!;
+const fin = chart.series.find((s) => s.id === 'final')!;
+const peak = pairs(raw.points).reduce((a, b) => (b[1] > a[1] ? b : a));
+// The final curve is labelled at 14 s, where it climbs through open space clear of the tick labels, with a
+// leader down to the line.
+const LEAD_T = 14;
+const leadTop = py(1300);
+const leadEnd = py(at(fin.points, LEAD_T)) - 6;
+const titleId = `${id}-chart`;
+---
+
+<svg class="chart speed" width="100%" height={H} style={`--h: ${H}px`} role="img" aria-labelledby={titleId}>
+  <title id={titleId} data-verbatim={chart.title.from}>{chart.title.text}</title>
+  <svg x="0" y={TOP} width="100%" height={PLOT} viewBox={`0 0 ${X} ${chart.yMax}`} preserveAspectRatio="none" aria-hidden="true">
+    {chart.yTicks.map((v) => <line class="grid" x1="0" x2={X} y1={chart.yMax - v} y2={chart.yMax - v} />)}
+    <path class="raw" d={path(raw.points)}></path>
+    <path class="final" d={path(fin.points)}></path>
+  </svg>
+  <line class="axis" x1="0" x2="100%" y1={BOTTOM} y2={BOTTOM}></line>
+  {
+    chart.xTicks.map((t, i) => (
+      <Fragment>
+        <line class="axis" x1={pct(t)} x2={pct(t)} y1={BOTTOM} y2={BOTTOM + 6} />
+        <text x={pct(t)} y={BOTTOM + 23} text-anchor={i === 0 ? 'start' : 'middle'}>
+          {n(t)} <tspan data-verbatim={chart.xUnit.from}>{chart.xUnit.text}</tspan>
+        </text>
+      </Fragment>
+    ))
+  }
+  {
+    chart.yTicks.map((v, i) => (
+      <text x="0" y={py(v) - 7}>
+        {n(v)}
+        {i === chart.yTicks.length - 1 && (
+          <Fragment>
+            {' '}
+            <tspan data-verbatim={chart.yUnit.from}>{chart.yUnit.text}</tspan>
+          </Fragment>
+        )}
+      </text>
+    ))
+  }
+  <text class="label wide" x={pct(peak[0])} dx="10" y={py(peak[1]) + 12} data-verbatim={raw.label.from}>{tie(raw.label.text)}</text>
+  <text class="label narrow" x={pct(peak[0])} dx="8" y={py(peak[1]) + 12} data-verbatim={raw.short.from}>{raw.short.text}</text>
+  <text class="label label--key wide" x={pct(LEAD_T)} y={leadTop} data-verbatim={fin.label.from}>{tie(fin.label.text)}</text>
+  <text class="label label--key narrow" x={pct(LEAD_T)} y={leadTop} data-verbatim={fin.short.from}>{fin.short.text}</text>
+  <line class="lead" x1={pct(LEAD_T)} x2={pct(LEAD_T)} y1={leadTop + 6} y2={leadEnd}></line>
+</svg>
+
+<style>
+  .speed {
+    height: var(--h);
+  }
+
+  .speed text {
+    font-size: var(--fs-meta);
+  }
+
+  .grid {
+    stroke: var(--hair);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    shape-rendering: crispEdges;
+  }
+
+  .raw,
+  .final {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+
+  .raw {
+    stroke: var(--chart-3);
+    stroke-width: 1.25;
+  }
+
+  .final {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+
+  .axis,
+  .lead {
+    stroke: var(--ink);
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+  }
+
+  .label--key {
+    fill: var(--ink);
+    font-weight: 600;
+  }
+
+  .narrow {
+    display: none;
+  }
+
+  @media (max-width: 639px) {
+    .wide {
+      display: none;
+    }
+
+    .narrow {
+      display: inline;
+    }
+  }
+
+  /* Contrast themes repaint the page but keep SVG paint, so ink on a dark Canvas vanished and only the raw line
+     read. The series that matters, its label and the axes take the theme's text colour; the raw line its grey. */
+  @media (forced-colors: active) {
+    .grid,
+    .raw {
+      stroke: GrayText;
+    }
+
+    .final,
+    .axis,
+    .lead {
+      stroke: CanvasText;
+    }
+
+    .speed text {
+      fill: CanvasText;
+    }
+  }
+</style>

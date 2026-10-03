@@ -1,33 +1,39 @@
 ---
+// Home: the masthead (the name set to the measure, the tagline, the About and the contact column), then the work
+// index, five rows of one anatomy in the fixed order, then the footer. Only row 1 moves (src/scripts/video.ts, loaded
+// by PlayButton.astro).
 import Base from '../layouts/Base.astro';
-import Nav from '../components/Nav.astro';
-import Hero from '../components/Hero.astro';
-import Project from '../components/Project.astro';
-import Index from '../components/Index.astro';
-import Contact from '../components/Contact.astro';
-import Footer from '../components/Footer.astro';
-import { projects } from '../data/projects';
+import ContactList from '../components/v3/ContactList.astro';
+import Footer from '../components/v3/Footer.astro';
+import WorkRow from '../components/v3/WorkRow.astro';
+import { caseStudies, labels, site } from '../data/case-studies';
+import { pictureSources, widthsFor } from '../lib/picture';
+import { slots } from '../styles/slots';
+import { tie } from '../lib/text';
 
-const bySlug = (slug: string) => projects.find((p) => p.slug === slug)!;
-const [first, ...rest] = projects;
-const single = rest.filter((p) => !['sunrise', 'gyroblaster'].includes(p.slug));
+// Row 1's poster is the first image on the page: preload exactly the AVIF set its <picture> picks from.
+const first = caseStudies[0].home.media;
+if (first.kind !== 'video') throw new Error("home: row 1 media must be the Sidequest loop");
+const lcp = await pictureSources(first.poster, first.posterPx, widthsFor('figure', first.posterPx), slots.figure.sizes);
 ---
 
 <Base>
-  <Nav />
-  <main class="wrap">
-    <!-- Band: name, the Sidequest stage and notes, then the index. Grid areas at >= 1200px; stacked below. -->
-    <div class="band">
-      <Hero />
-      <Project project={first} />
-      <Index />
-    </div>
-    {single.map((p) => <Project project={p} />)}
-    <div class="pair">
-      <Project project={bySlug('sunrise')} />
-      <Project project={bySlug('gyroblaster')} />
-    </div>
-    <Contact />
+  <link slot="head" rel="preload" as="image" type="image/avif" imagesrcset={lcp.avif} imagesizes={lcp.sizes} fetchpriority="high" />
+  <main id="main" class="wrap" data-page="home">
+    <header class="masthead">
+      <h1 class="display nameplate" data-verbatim={site.name.from}>{site.name.text}</h1>
+      <hr class="masthead__rule" />
+      <div class="deck grid">
+        <div class="deck__intro">
+          <p class="tagline" data-verbatim={site.tagline.from}>{site.tagline.text}</p>
+          <p class="about" data-verbatim={site.about.from}>{tie(site.about.text)}</p>
+        </div>
+        <ContactList variant="deck" />
+      </div>
+    </header>
+    <ol class="work" aria-label={labels.projects.text}>
+      {caseStudies.map((cs, i) => <WorkRow cs={cs} priority={i === 0} />)}
+    </ol>
   </main>
   <Footer />
 </Base>

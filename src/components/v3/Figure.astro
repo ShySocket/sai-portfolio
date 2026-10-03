@@ -1,0 +1,46 @@
+---
+// One captioned figure on a case study: a frame (still, screens or video), a chart, a diagram or a table, then the
+// caption in Meta 12px under it. A video's caption starts with the Play control (PlayButton.astro), shown from first
+// paint when the head script has set the js class (global.css), so the caption never shifts when video.ts runs;
+// without JS it is not shown and the video keeps its native controls.
+import type { Figure } from '../../data/case-studies';
+import { tie } from '../../lib/text';
+import Frame from './Frame.astro';
+import PlayButton from './PlayButton.astro';
+import SpeedChart from './SpeedChart.astro';
+import LevelStrip from './LevelStrip.astro';
+import FlowDiagram from './FlowDiagram.astro';
+import DataTable from './DataTable.astro';
+
+interface Props {
+  figure: Figure;
+  class?: string;
+  priority?: boolean;
+  /** The case hero: its slug, which pairs the frame with the home row media in the page view transition. */
+  vt?: string;
+}
+const { figure, class: cls, priority = false, vt } = Astro.props;
+const m = figure.media;
+const framed = m.kind === 'still' || m.kind === 'video' || m.kind === 'screens';
+const player = m.kind === 'video' && !m.loop;
+const capId = `${figure.id}-caption`;
+const videoId = `${figure.id}-video`;
+// Charts and screen pairs run the Wide slot; a diagram is read as a list and a table as rows, so both keep to
+// the prose measure whatever slot the data names.
+const wide = figure.slot === 'wide' && m.kind !== 'diagram' && m.kind !== 'table';
+// Caption lines are separate sourced strings; a media label from projects.ts ends without a full stop, so the
+// joiner closes that sentence before the next line starts.
+const joiner = (prev: string) => (/[.!?:]$/.test(prev) ? ' ' : '. ');
+---
+
+<figure class:list={['figure', wide && 'figure--wide', cls]} id={figure.id}>
+  {framed && <Frame media={m} page="case" slot={figure.slot} priority={priority} labelledby={player ? capId : undefined} videoId={player ? videoId : undefined} vt={vt} />}
+  {m.kind === 'speed' && <SpeedChart chart={m} id={figure.id} />}
+  {m.kind === 'strip' && <LevelStrip strip={m} id={figure.id} />}
+  {m.kind === 'diagram' && <FlowDiagram diagram={m} />}
+  {m.kind === 'table' && <DataTable table={m} />}
+  <figcaption class="caption">
+    {player && <PlayButton video={videoId} describedby={capId} />}
+    <span id={capId}>{figure.caption.map((c, i) => <Fragment>{i > 0 && joiner(figure.caption[i - 1].text)}<span data-verbatim={c.from}>{tie(c.text)}</span></Fragment>)}</span>
+  </figcaption>
+</figure>

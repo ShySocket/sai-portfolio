@@ -1,0 +1,51 @@
+---
+// The contact row, always Résumé, GitHub, LinkedIn, Email: the home deck, the case study header and the footer
+// (global.css .contact--deck / --header / --footer). Each page shows it twice at most.
+import { labels, site } from '../../data/case-studies';
+import { href, requirePublic } from '../../lib/text';
+
+interface Props {
+  variant: 'deck' | 'header' | 'footer';
+}
+const { variant } = Astro.props;
+const links = site.contact.map((c) => ({ ...c, url: c.internal ? requirePublic(c.href) : href(c.href) }));
+---
+
+<ul class={`contact contact--${variant}`} aria-label={labels.contact.text}>
+  {
+    links.map((c) => (
+      <li>
+        <a href={c.url} data-verbatim={c.label.from}>{c.label.text}</a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  /* Under 640 the four deck links do not fit one line at every phone width (375 needs 347px for 343), so they set
+     as two columns on the grid's column lines 1 and 3 instead of wrapping one word onto a line of its own. */
+  @media (max-width: 639px) {
+    .contact--deck {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--gutter);
+      justify-items: start;
+    }
+  }
+
+  /* The footer row at headline size fits one line only from 1024; below that it wrapped Email alone onto a second
+     line (at 768) or set a ragged second line (at 390). It sets as two columns on the grid instead: column lines
+     1 and 3 of 4 under 640, 1 and 5 of 8 from 640, Résumé and GitHub over LinkedIn and Email. Under 360 two
+     columns are narrower than "LinkedIn" at 36px, so the row wraps as words there. Each link is a flex item half the
+     row wide that may not shrink below its word, so with wider letter or word spacing (WCAG 1.4.12) or larger text a
+     word that outgrows its column wraps to its own line instead of running into its neighbour. */
+  @media (min-width: 360px) and (max-width: 1023px) {
+    .contact--footer {
+      column-gap: var(--gutter);
+    }
+
+    .contact--footer li {
+      flex: 1 0 calc(50% - var(--gutter) / 2);
+    }
+  }
+</style>

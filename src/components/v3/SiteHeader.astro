@@ -1,0 +1,13 @@
+---
+// The case study header: the name, linking home, and the contact row on one line from 640, over a 1px ink rule.
+import { site } from '../../data/case-studies';
+import { url } from '../../lib/text';
+import ContactList from './ContactList.astro';
+---
+
+<header class="wrap">
+  <div class="site-header">
+    <a class="site-header__name" href={url()} data-verbatim={site.name.from}>{site.name.text}</a>
+    <ContactList variant="header" />
+  </div>
+</header>

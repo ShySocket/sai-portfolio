@@ -4,14 +4,18 @@
 //
 //   node scripts/verify-build.mjs
 //
-// 1. Verbatim: every rendered string that is derived from projects.ts (claims, clip captions and still alts,
-//    index titles, kickers and awards, flow nodes, key labels, tags, summaries, note lead-ins and bodies, screen
-//    alts) is a substring of a projects.ts string.
-//    projects.ts is the confirmed copy; presentation.ts may only pick phrases out of it, never write new ones.
+// Every built page (dist/**/index.html and any other .html) is checked.
+//
+// 1. Verbatim: every rendered string that claims to come from the data files matches them. Any element with
+//    data-verbatim="projects" (src/data/projects.ts, the confirmed copy) or data-verbatim="case"
+//    (src/data/case-studies.ts, the sourced case-study copy) must have its text (an <img>: its alt) as a substring of
+//    that file's string literals. Every page must declare data-page and carry at least 3 such strings, so a new page
+//    or markup that forgets the attribute fails instead of checking nothing.
+//    Data files only hold copy; templates may only pick phrases out of them, never write new ones.
 // 2. Media: dist/assets ships no PNG and no untransformed image original (only astro:assets encodes).
 // 3. Typography: no em or en dashes in rendered text (HTML text and attributes, and the strings in JS and CSS).
 
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
 
 const root = resolve(new URL('..', import.meta.url).pathname);
@@ -19,11 +23,16 @@ const dist = join(root, 'dist');
 const failures = [];
 const fail = (msg) => failures.push(msg);
 
-// ------------------------------------------------------------------ corpus: the string literals of projects.ts
-const source = readFileSync(join(root, 'src/data/projects.ts'), 'utf8');
+// ------------------------------------------------------------------ corpora: the string literals of the data files
 const unescape = (s) => s.replace(/\\(.)/g, '$1');
-const squash = (s) => s.replace(/\s+/g, ' ').trim();
-const corpus = [...source.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)].map((m) => squash(unescape(m[1]))).join('\n');
+// Whitespace runs (U+00A0 included) fold to one space, and a non-breaking hyphen (U+2011) reads as a hyphen: both
+// are ties src/lib/text.ts adds at render time, never a change of wording.
+const squash = (s) => s.replace(/\u2011/g, '-').replace(/\s+/g, ' ').trim();
+const literals = (file) =>
+  existsSync(join(root, file))
+    ? [...readFileSync(join(root, file), 'utf8').matchAll(/'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g)].map((m) => squash(unescape(m[1] ?? m[2]))).join('\n')
+    : '';
+const corpora = { projects: literals('src/data/projects.ts'), case: literals('src/data/case-studies.ts') };
 
 // ------------------------------------------------------------------ a small HTML tree (Astro output is well formed)
 const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
@@ -61,8 +70,6 @@ function parse(html) {
   return top;
 }
 
-const classes = (el) => (el.attrs?.class ?? '').split(/\s+/);
-const has = (el, c) => typeof el === 'object' && classes(el).includes(c);
 const all = (el, test, out = []) => {
   for (const c of el.children ?? []) if (typeof c === 'object') { if (test(c)) out.push(c); all(c, test, out); }
   return out;
@@ -70,54 +77,31 @@ const all = (el, test, out = []) => {
 const text = (el) => squash((el.children ?? []).map((c) => (typeof c === 'string' ? c : RAW.has(c.tag) ? '' : text(c))).join(''));
 
 // ------------------------------------------------------------------ 1. verbatim
-const html = readFileSync(join(dist, 'index.html'), 'utf8');
-const doc = parse(html);
-const byClass = (c) => all(doc, (el) => has(el, c));
-const kids = (el, tag) => (el.children ?? []).filter((c) => typeof c === 'object' && c.tag === tag);
-function notes() {
-  return byClass('note').map((li) => {
-    const p = kids(li, 'p')[0] ?? { children: [] };
-    const b = kids(p, 'b')[0] ?? { children: [] };
-    const body = (p.children ?? []).filter((c) => c !== b).map((c) => (typeof c === 'string' ? c : text(c))).join('');
-    return [text(b).replace(/\.$/, ''), squash(body)];
-  });
-}
-// The ReliefIQ screens (inside .shot) and the Lazer Shooter screen (.phone__shot): their alts are projects.ts copy.
-const shotImgs = new Set(byClass('shot').flatMap((s) => all(s, (el) => el.tag === 'img')));
-const isShot = (el) => shotImgs.has(el);
-
-// What claims to be verbatim, by the class that renders it, with the least the page must hold (so a renamed class
-// fails loudly instead of checking nothing).
-const checks = [
-  ['entry title', byClass('entry__title').map(text), 5],
-  ['claim', byClass('claim').map(text), 4],
-  ['award', [...byClass('award'), ...byClass('row__award')].map(text), 2],
-  ['tag', byClass('tags').flatMap((ul) => kids(ul, 'li').map(text)), 20],
-  ['clip caption', byClass('cap__label').map(text), 3],
-  ['clip still alt', byClass('well__still').map((img) => img.attrs.alt ?? ''), 3],
-  ['index title', byClass('row__title').map(text), 5],
-  ['index kicker', byClass('kicker').flatMap((ul) => kids(ul, 'li').map(text)), 15],
-  ['flow node', [...byClass('flow__node'), ...byClass('flow__parts').flatMap((ul) => kids(ul, 'li'))].map(text), 7],
-  ['key label', byClass('keys').flatMap((k) => all(k, (el) => el.tag === 'a').map((a) => text(kids(a, 'span')[0] ?? { children: [] }))), 6],
-  ['summary', byClass('summary').map(text), 5],
-  // A note renders as <p><b>Lead-in.</b> Body</p>: the lead-in without its period, and the body after it.
-  ['note lead-in', notes().map(([lead]) => lead), 10],
-  ['note body', notes().map(([, body]) => body), 10],
-  ['screen alt', all(doc, (el) => el.tag === 'img' && (has(el, 'phone__shot') || isShot(el))).map((img) => img.attrs.alt ?? ''), 4],
-];
+const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
+const files = walk(dist);
+const pages = files.filter((f) => extname(f) === '.html');
 let verbatim = 0;
-for (const [what, strings, min] of checks) {
-  if (strings.length < min) fail(`verbatim: expected at least ${min} ${what} strings in dist/index.html, found ${strings.length}`);
-  for (const s of strings) {
+const perPage = [];
+
+for (const page of pages) {
+  const d = parse(readFileSync(page, 'utf8'));
+  const tagged = all(d, (el) => el.attrs && 'data-verbatim' in el.attrs);
+  const kind = all(d, (el) => el.attrs && 'data-page' in el.attrs)[0]?.attrs['data-page'];
+  perPage.push(`${relative(dist, page).replace(/(^|\/)index\.html$/, '') || '/'} ${tagged.length}`);
+  if (kind === undefined) fail(`verbatim: ${relative(root, page)} declares no data-page, so its copy is unchecked`);
+  else if (tagged.length < 3) fail(`verbatim: ${relative(root, page)} declares data-page but tags only ${tagged.length} data-verbatim strings`);
+  for (const el of tagged) {
+    const which = el.attrs['data-verbatim'] || 'projects';
+    const ref = corpora[which];
+    const s = el.tag === 'img' ? squash(el.attrs.alt ?? '') : text(el);
     verbatim++;
-    if (!s) fail(`verbatim: an empty ${what}`);
-    else if (!corpus.includes(s)) fail(`verbatim: ${what} "${s}" is not a substring of src/data/projects.ts copy`);
+    if (ref === undefined) fail(`verbatim: ${relative(root, page)} uses unknown data-verbatim="${which}"`);
+    else if (!s) fail(`verbatim: ${relative(root, page)} has an empty data-verbatim="${which}" ${el.tag}`);
+    else if (!ref.includes(s)) fail(`verbatim: ${relative(root, page)} "${s.slice(0, 90)}" is not a substring of the ${which} data file`);
   }
 }
 
 // ------------------------------------------------------------------ 2. media
-const walk = (dir) => readdirSync(dir).flatMap((f) => (statSync(join(dir, f)).isDirectory() ? walk(join(dir, f)) : [join(dir, f)]));
-const files = walk(dist);
 const assets = files.filter((f) => f.startsWith(join(dist, 'assets') + '/'));
 const IMAGE = new Set(['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif']);
 for (const f of assets) {
@@ -131,10 +115,12 @@ for (const f of assets) {
 
 // ------------------------------------------------------------------ 3. dashes
 const DASH = /[–—]|&(?:mdash|ndash);|&#(?:8211|8212);|&#x201[34];/i;
-const rendered = html.replace(/<!--[\s\S]*?-->/g, '').replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '');
 const at = (s, i) => JSON.stringify(s.slice(Math.max(0, i - 30), i + 30));
-let m = DASH.exec(rendered);
-if (m) fail(`dashes: dist/index.html renders an em or en dash near ${at(rendered, m.index)}`);
+let m;
+for (const page of pages) {
+  const rendered = readFileSync(page, 'utf8').replace(/<!--[\s\S]*?-->/g, '').replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '');
+  if ((m = DASH.exec(rendered))) fail(`dashes: ${relative(root, page)} renders an em or en dash near ${at(rendered, m.index)}`);
+}
 for (const f of files.filter((f) => ['.js', '.css'].includes(extname(f)))) {
   const code = readFileSync(f, 'utf8');
   if ((m = DASH.exec(code))) fail(`dashes: ${relative(root, f)} carries an em or en dash near ${at(code, m.index)}`);
@@ -145,4 +131,4 @@ if (failures.length) {
   for (const f of failures) console.error(`  FAIL ${f}`);
   process.exit(1);
 }
-console.log(`verify-build: OK (${verbatim} verbatim strings, ${assets.length} assets with no PNG or original, no em or en dashes)`);
+console.log(`verify-build: OK (${pages.length} page(s), ${verbatim} verbatim strings [${perPage.join(', ')}], ${assets.length} assets with no PNG or original, no em or en dashes)`);

@@ -1,0 +1,91 @@
+---
+// The 16:9 media frame (global.css .frame): a still, phone screens side by side, or a video layered over its poster.
+//
+// Video, two behaviours, both readable without JavaScript (data-video on the frame names which):
+//   loop   (home row 1): muted, looping, no controls, preload none and no autoplay attribute, so without JS, under
+//          reduced motion and with Save-Data the poster is all there is and no video byte is fetched. video.ts (inlined
+//          once per page by PlayButton.astro) plays it while it is in view; the Pause control under it is the row's
+//          (WorkRow.astro).
+//   player (case heroes): native controls over the poster without JS; video.ts drops them for the caption's Play
+//          button. preload none: nothing loads before Play.
+// The poster is a real <picture> under the video (whose own poster is a transparent pixel), so it gets AVIF/WebP,
+// srcset and priority like any image. With JS the video stays out of sight until its first frame is on screen, then
+// fades in over the poster (global.css, Motion).
+//
+// data-vt names the frame for the page view transition (Base.astro): a home row's media and its case hero share the
+// case study's slug, and only the pair the visitor is moving between is given a view-transition-name.
+import type { Px, Screens, Slot, Still, Video } from '../../data/case-studies';
+import { screenWidths, widthsFor } from '../../lib/picture';
+import { screensSizes, slots, type SlotName } from '../../styles/slots';
+import { url } from '../../lib/text';
+import Pic from './Pic.astro';
+
+interface Props {
+  media: Still | Video | Screens;
+  page: 'home' | 'case';
+  slot: Slot;
+  /** Home rows: the frame is a link to the case study, out of the tab order (the title links there too). */
+  href?: string;
+  class?: string;
+  /** The page's hero: eager and high priority. */
+  priority?: boolean;
+  /** Drop alts (home rows: the title beside the frame names the project). */
+  decorative?: boolean;
+  /** Player videos: the id of the caption that names the video. */
+  labelledby?: string;
+  /** Videos: the id of the <video>, which its Play/Pause button names in data-toggle. */
+  videoId?: string;
+  /** The page view transition key (a case study slug): set on home row media and on the case hero. */
+  vt?: string;
+}
+const { media, page, slot, href, class: cls, priority = false, decorative = false, labelledby, videoId, vt } = Astro.props;
+if (media.kind === 'video' && !videoId) throw new Error('Frame: a video needs a videoId for its Play/Pause control');
+
+const slotName: SlotName = slot === 'figure' && page === 'case' ? 'figureCase' : slot;
+const frameFor = (s: Slot) => (s === 'wide' ? 'wide' : 'figure');
+const CLEAR = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+const Tag = href ? 'a' : 'div';
+const aspect = (px: Px) => px[0] / px[1];
+// Phone screens may be drawn through a window centred on each screen (Screens.view): global.css sizes each image
+// to that aspect and covers it, and the widths and sizes follow the window, not the whole screen.
+const view = media.kind === 'screens' ? media.view : undefined;
+---
+
+<Tag
+  class:list={['frame', media.kind === 'screens' && 'frame--screens', cls]}
+  href={href}
+  tabindex={href ? -1 : undefined}
+  aria-hidden={href ? 'true' : undefined}
+  data-video={media.kind === 'video' ? (media.loop ? 'loop' : 'player') : undefined}
+  data-vt={vt}
+  style={view ? `--view: ${view[0]} / ${view[1]}` : undefined}
+>
+  {
+    media.kind === 'still' && (
+      <Pic image={media.image} px={media.px} widths={widthsFor(slotName, media.px)} sizes={slots[slotName].sizes} alt={decorative ? null : media.alt} priority={priority} fill />
+    )
+  }
+  {
+    media.kind === 'screens' &&
+      media.screens.map((s) => {
+        const a = aspect(view ?? s.px);
+        return <Pic image={s.image} px={s.px} widths={screenWidths(s.px, a, frameFor(slot))} sizes={screensSizes(a, frameFor(slot))} alt={decorative ? null : s.alt} priority={priority} />;
+      })
+  }
+  {
+    media.kind === 'video' && (
+      <Fragment>
+        <Pic image={media.poster} px={media.posterPx} widths={widthsFor(slotName, media.posterPx)} sizes={slots[slotName].sizes} alt={decorative ? null : media.alt} priority={priority} fill />
+        {media.loop ? (
+          <video id={videoId} muted loop playsinline preload="none" disablepictureinpicture disableremoteplayback poster={CLEAR} width={media.px[0]} height={media.px[1]}>
+            {media.sources.map((s) => <source src={url(s.src)} type={s.type} />)}
+          </video>
+        ) : (
+          <video id={videoId} controls muted playsinline preload="none" poster={CLEAR} width={media.px[0]} height={media.px[1]} aria-labelledby={labelledby}>
+            {media.sources.map((s) => <source src={url(s.src)} type={s.type} />)}
+          </video>
+        )}
+      </Fragment>
+    )
+  }
+</Tag>
